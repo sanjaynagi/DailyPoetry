@@ -1,0 +1,52 @@
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+
+# Node / frontend
+node_modules/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# App build outputs
+daily-poetry-app/dist/
+
+# API local DB artifacts
+daily-poetry-api/*.db
+daily-poetry-api/*.sqlite
+daily-poetry-api/*.sqlite3
+
+# Ingestion / runtime artifacts
+artifacts/
+
+# Coverage
+coverage/

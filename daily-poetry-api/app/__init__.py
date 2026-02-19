@@ -1,0 +1,1 @@
+"""Daily Poetry API package."""

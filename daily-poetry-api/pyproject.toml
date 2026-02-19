@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "daily-poetry-api"
+version = "0.1.0"
+description = "Backend MVP for Daily Poetry"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.116.1",
+  "uvicorn>=0.35.0",
+  "sqlalchemy>=2.0.43",
+  "pydantic>=2.11.7",
+  "python-dotenv>=1.1.1"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.4.1",
+  "httpx>=0.28.1"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
