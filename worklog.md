@@ -1,5 +1,12 @@
 # Worklog
 
+## 2026-02-19 12:32:15Z
+- Added root `.gitignore` covering OS/editor files, Python caches/build artifacts, Node modules/build artifacts, local DB files, env files, and runtime artifacts.
+- Linked local repository to GitHub remote `sanjaynagi/DailyPoetry`.
+- Resolved nested repository conflict by moving `daily-poetry-app/.git` aside so the workspace can be tracked as a single repo.
+- Created initial repository commit: `3cddd40` (`Initial DailyPoetry workspace setup`).
+- Pushed `main` to `origin` (`git@github.com:sanjaynagi/DailyPoetry.git`).
+
 ## 2026-02-19 11:19:05Z
 - Completely renewed `plan.md` with current-state summary and production roadmap.
 - Added explicit external service setup guidance for:
