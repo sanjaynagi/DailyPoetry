@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import HTTPException
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, String, cast, func, select
 from sqlalchemy.orm import Session
 
 from app import models
@@ -35,7 +35,7 @@ def fetch_daily_payload(db: Session) -> dict:
         select(models.DailySelection, models.Poem, models.Author)
         .join(models.Poem, models.Poem.id == models.DailySelection.poem_id)
         .join(models.Author, models.Author.id == models.Poem.author_id)
-        .where(models.DailySelection.date == today)
+        .where(cast(models.DailySelection.date, String) == today.isoformat())
     )
 
     row = db.execute(stmt).one_or_none()
@@ -44,7 +44,7 @@ def fetch_daily_payload(db: Session) -> dict:
 
     daily, poem, author = row
     return {
-        "date": daily.date.isoformat(),
+        "date": daily.date.isoformat() if hasattr(daily.date, "isoformat") else str(daily.date),
         "poem": {
             "id": poem.id,
             "title": poem.title,
@@ -84,7 +84,11 @@ def fetch_user_favourites(db: Session, user: models.User) -> list[dict]:
                 "poem_id": poem.id,
                 "title": poem.title,
                 "author": author.name,
-                "date_featured": date_featured.isoformat() if date_featured else None,
+                "date_featured": (
+                    date_featured.isoformat()
+                    if date_featured is not None and hasattr(date_featured, "isoformat")
+                    else (str(date_featured) if date_featured is not None else None)
+                ),
             }
         )
     return favourites

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Callable
 from uuid import NAMESPACE_DNS, uuid5
 
-from sqlalchemy import select
+from sqlalchemy import String, cast, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -134,7 +134,9 @@ def _seed_daily_selection(db: Session, poem_ids: list[str], start_date: date, da
         current_date = start_date.fromordinal(offset + i)
         poem_id = poem_ids[(offset + i) % len(poem_ids)]
 
-        model = db.execute(select(DailySelection).where(DailySelection.date == current_date)).scalar_one_or_none()
+        model = db.execute(
+            select(DailySelection).where(cast(DailySelection.date, String) == current_date.isoformat())
+        ).scalar_one_or_none()
         if model is None:
             db.add(DailySelection(date=current_date, poem_id=poem_id))
             created += 1
