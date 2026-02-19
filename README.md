@@ -1,4 +1,4 @@
-# Daily Poetry Workspace
+# Daily Poetry README
 
 This repository now contains three projects:
 
