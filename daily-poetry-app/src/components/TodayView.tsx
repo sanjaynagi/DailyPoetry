@@ -22,11 +22,32 @@ export function TodayView({
         {fromCache ? <p className="offline-chip">Offline / cached</p> : null}
       </header>
 
-      <h1 className="poem-title">{daily.poem.title}</h1>
+      <div className="poem-card-wrap">
+        <article className="poem-card">
+          <h1 className="poem-title">{daily.poem.title}</h1>
+          <pre className="poem-text">{daily.poem.text}</pre>
+        </article>
 
-      <pre className="poem-text">{daily.poem.text}</pre>
+        <button
+          className={isFavourite ? "heart-button heart-button-active" : "heart-button"}
+          type="button"
+          aria-label={isFavourite ? "Remove favourite" : "Add favourite"}
+          title={isFavourite ? "Remove favourite" : "Add favourite"}
+          onClick={onToggleFavourite}
+          disabled={favouriteSyncing}
+        >
+          {favouriteSyncing ? (
+            "..."
+          ) : (
+            <svg className="heart-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12.1 21.35 10.55 19.95C5.4 15.3 2 12.25 2 8.5 2 5.45 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.45 22 8.5c0 3.75-3.4 6.8-8.55 11.45z" />
+            </svg>
+          )}
+        </button>
+      </div>
 
-      <footer className="author-block">
+      <footer className="author-panel">
+        <div className="author-block">
         {daily.author.image_url ? (
           <img className="author-image" src={daily.author.image_url} alt={daily.author.name} />
         ) : null}
@@ -34,18 +55,8 @@ export function TodayView({
           <p className="author-name">{daily.author.name}</p>
           <p className="author-bio">{daily.author.bio_short}</p>
         </div>
+        </div>
       </footer>
-
-      <button
-        className={isFavourite ? "heart-button heart-button-active" : "heart-button"}
-        type="button"
-        aria-label={isFavourite ? "Remove favourite" : "Add favourite"}
-        title={isFavourite ? "Remove favourite" : "Add favourite"}
-        onClick={onToggleFavourite}
-        disabled={favouriteSyncing}
-      >
-        {favouriteSyncing ? "..." : isFavourite ? "♥" : "♡"}
-      </button>
     </section>
   );
 }
