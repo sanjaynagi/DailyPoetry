@@ -5,7 +5,7 @@ import {
   fetchNotificationPreference,
   updateNotificationPreference,
 } from "../lib/api";
-import { VAPID_PUBLIC_KEY } from "../lib/constants";
+import { API_BASE_URL, VAPID_PUBLIC_KEY } from "../lib/constants";
 import type { NotificationPreference } from "../types/poetry";
 
 type NotificationState = {
@@ -52,6 +52,13 @@ function defaultPreference(): NotificationPreference {
   };
 }
 
+function toNotificationErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof TypeError && error.message === "Failed to fetch") {
+    return `Could not reach the DailyPoetry API (${API_BASE_URL}). Check connection and API configuration.`;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function useNotifications() {
   const [preference, setPreference] = useState<NotificationPreference>(defaultPreference);
   const [loading, setLoading] = useState(true);
@@ -73,7 +80,7 @@ export function useNotifications() {
         const remote = await fetchNotificationPreference();
         setPreference(remote);
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Failed to load notification preferences");
+        setError(toNotificationErrorMessage(loadError, "Failed to load notification preferences"));
       } finally {
         setLoading(false);
       }
@@ -125,7 +132,7 @@ export function useNotifications() {
       });
       setPreference(nextPreference);
     } catch (enableError) {
-      setError(enableError instanceof Error ? enableError.message : "Failed to enable notifications");
+      setError(toNotificationErrorMessage(enableError, "Failed to enable notifications"));
     } finally {
       setSyncing(false);
     }
@@ -154,7 +161,7 @@ export function useNotifications() {
       });
       setPreference(nextPreference);
     } catch (disableError) {
-      setError(disableError instanceof Error ? disableError.message : "Failed to disable notifications");
+      setError(toNotificationErrorMessage(disableError, "Failed to disable notifications"));
     } finally {
       setSyncing(false);
     }

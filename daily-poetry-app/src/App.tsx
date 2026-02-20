@@ -70,13 +70,17 @@ function App() {
   return (
     <main className="page">
       <button
-        className="theme-toggle app-theme-toggle"
+        className={theme === "dark" ? "theme-toggle app-theme-toggle theme-toggle-dark" : "theme-toggle app-theme-toggle"}
         type="button"
         onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
         aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
         title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
       >
-        {theme === "light" ? "☾" : "☀"}
+        <span className="theme-toggle-track" aria-hidden="true">
+          <span className="theme-toggle-icon">☀</span>
+          <span className="theme-toggle-icon">☾</span>
+          <span className="theme-toggle-thumb" />
+        </span>
       </button>
       <section className="content-wrap">
         {loadingDaily ? (

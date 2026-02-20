@@ -192,22 +192,54 @@ body::after {
 }
 
 .theme-toggle {
-  border: 0;
-  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--panel-border) 80%, transparent);
+  background: color-mix(in srgb, var(--panel-bg) 82%, transparent);
   color: var(--text-main);
-  border-radius: 0;
-  padding: 0.12rem 0.2rem;
-  font-size: 1.22rem;
+  border-radius: 999px;
+  padding: 0.18rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: none;
-  min-width: auto;
-  min-height: auto;
+  box-shadow: 0 8px 20px rgba(20, 17, 14, 0.14);
 }
 
 .theme-toggle:hover {
-  transform: translateY(-1px);
-  color: color-mix(in srgb, var(--brand-accent) 74%, var(--text-main) 26%);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.theme-toggle-track {
+  --toggle-width: 3.7rem;
+  --toggle-height: 1.9rem;
+  --toggle-padding: 0.22rem;
+  --toggle-thumb-size: 1.45rem;
+  width: var(--toggle-width);
+  height: var(--toggle-height);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  place-items: center;
+  position: relative;
+}
+
+.theme-toggle-icon {
+  font-size: 0.95rem;
+  color: color-mix(in srgb, var(--text-main) 72%, var(--subtle-text) 28%);
+  z-index: 1;
+}
+
+.theme-toggle-thumb {
+  position: absolute;
+  left: var(--toggle-padding);
+  top: calc((var(--toggle-height) - var(--toggle-thumb-size)) / 2);
+  width: var(--toggle-thumb-size);
+  height: var(--toggle-thumb-size);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--poem-card-bg) 62%, var(--panel-bg) 38%);
+  box-shadow: 0 2px 8px rgba(20, 17, 14, 0.2);
+  transform: translateX(0);
+  transition: transform 180ms ease;
+}
+
+.theme-toggle-dark .theme-toggle-thumb {
+  transform: translateX(calc((0.75 * var(--toggle-width)) - var(--toggle-padding) - (0.5 * var(--toggle-thumb-size))));
 }
 
 .app-theme-toggle {
