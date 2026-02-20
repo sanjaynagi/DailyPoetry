@@ -4,4 +4,5 @@ export const STORAGE_KEYS = {
   cachedDaily: "daily-poetry.cached-daily",
   favourites: "daily-poetry.favourites",
   authToken: "daily-poetry.auth-token",
+  theme: "daily-poetry.theme",
 };

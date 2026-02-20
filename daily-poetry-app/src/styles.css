@@ -1,8 +1,67 @@
 :root {
-  color: #1e2220;
-  background: radial-gradient(circle at top, #f4f0e5 0%, #ece5d6 45%, #e2d8c5 100%);
+  --text-main: #1e2220;
+  --bg-main: radial-gradient(circle at top, #f4f0e5 0%, #ece5d6 45%, #e2d8c5 100%);
+  --panel-border: #b8a78a;
+  --panel-bg: rgba(255, 252, 246, 0.85);
+  --poem-card-bg: #f0e6d3;
+  --date-label: #433d33;
+  --offline-bg: #dde9de;
+  --offline-text: #1f4b2d;
+  --author-panel-bg: rgba(252, 247, 238, 0.9);
+  --author-image-border: #c9baa0;
+  --author-bio: #4c463e;
+  --heart-border: #b47d84;
+  --heart-bg: #fff6f7;
+  --heart-text: #8f2f44;
+  --heart-active-bg: #ffecef;
+  --heart-active-text: #5a1d2f;
+  --heart-active-border: #6e3345;
+  --subtle-text: #5f5547;
+  --favourite-row-border: #c7baa3;
+  --favourite-row-bg: #fcfaf4;
+  --favourite-poem-text: #302b24;
+  --status-text: #544d43;
+  --status-error: #8a1d1d;
+  --tabs-border: #c8b89e;
+  --tabs-bg: rgba(247, 239, 226, 0.96);
+  --tab-text: #5b5143;
+  --tab-active-text: #1f2a2a;
+  --tab-separator: #b6a98f;
+  color: var(--text-main);
+  background: var(--bg-main);
   font-family: "Spectral", "Iowan Old Style", "Georgia", serif;
   line-height: 1.5;
+}
+
+[data-theme="dark"] {
+  --text-main: #ece8de;
+  --bg-main: radial-gradient(circle at top, #1e232b 0%, #171b22 50%, #12161d 100%);
+  --panel-border: #3b444f;
+  --panel-bg: rgba(30, 36, 45, 0.9);
+  --poem-card-bg: #2a313b;
+  --date-label: #d8cbb2;
+  --offline-bg: #2e3f3a;
+  --offline-text: #b8dfce;
+  --author-panel-bg: rgba(40, 47, 57, 0.92);
+  --author-image-border: #596477;
+  --author-bio: #b7c0cd;
+  --heart-border: #7d4b5e;
+  --heart-bg: #2b1f27;
+  --heart-text: #dfb9c7;
+  --heart-active-bg: #442230;
+  --heart-active-text: #ffd7e3;
+  --heart-active-border: #9d6678;
+  --subtle-text: #c5cddd;
+  --favourite-row-border: #4b5564;
+  --favourite-row-bg: #2a313c;
+  --favourite-poem-text: #d7ddea;
+  --status-text: #c0c7d4;
+  --status-error: #ff8d8d;
+  --tabs-border: #3f4a58;
+  --tabs-bg: rgba(24, 30, 39, 0.95);
+  --tab-text: #c7cfde;
+  --tab-active-text: #ffffff;
+  --tab-separator: #5f6b7e;
 }
 
 * {
@@ -12,6 +71,8 @@
 body {
   margin: 0;
   min-height: 100vh;
+  color: var(--text-main);
+  background: var(--bg-main);
 }
 
 .page {
@@ -24,9 +85,33 @@ body {
   min-height: calc(100vh - 8.5rem);
 }
 
+.loading-splash {
+  min-height: calc(100vh - 12rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+}
+
+.loading-logo {
+  width: min(340px, 78vw);
+  height: auto;
+  opacity: 0.95;
+}
+
+.theme-toggle {
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--text-main);
+  border-radius: 999px;
+  padding: 0.38rem 0.72rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 .panel {
-  border: 1px solid #b8a78a;
-  background: rgba(255, 252, 246, 0.85);
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
   border-radius: 1rem;
   padding: 1rem;
   box-shadow: 0 10px 28px rgba(24, 20, 14, 0.07);
@@ -39,6 +124,20 @@ body {
   gap: 1rem;
 }
 
+.top-logo-wrap {
+  margin-top: 0.38rem;
+  margin-bottom: 0.78rem;
+  display: flex;
+  justify-content: center;
+}
+
+.top-logo {
+  width: min(190px, 50vw);
+  height: auto;
+  object-fit: contain;
+  opacity: 1;
+}
+
 .poem-card-wrap {
   position: relative;
   margin-top: 0.9rem;
@@ -47,26 +146,17 @@ body {
 
 .poem-card {
   border: 0;
-  background: #f0e6d3;
+  background: var(--poem-card-bg);
   border-radius: 0.95rem;
   padding: 1rem 1rem 1.35rem;
 }
 
 .date-label {
   margin: 0;
-  color: #433d33;
+  color: var(--date-label);
   font-size: 1.15rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-}
-
-.offline-chip {
-  margin: 0;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  background: #dde9de;
-  color: #1f4b2d;
-  padding: 0.2rem 0.55rem;
 }
 
 .poem-title {
@@ -86,7 +176,7 @@ body {
 
 .author-panel {
   border: 0;
-  background: rgba(252, 247, 238, 0.9);
+  background: var(--author-panel-bg);
   border-radius: 0.9rem;
   padding: 0.85rem;
 }
@@ -102,7 +192,7 @@ body {
   height: 72px;
   object-fit: cover;
   border-radius: 0.6rem;
-  border: 1px solid #c9baa0;
+  border: 1px solid var(--author-image-border);
 }
 
 .author-name {
@@ -112,7 +202,7 @@ body {
 
 .author-bio {
   margin: 0.25rem 0 0;
-  color: #4c463e;
+  color: var(--author-bio);
 }
 
 .heart-button {
@@ -120,10 +210,10 @@ body {
   right: 0.9rem;
   bottom: 0;
   transform: translateY(50%);
-  border: 1px solid #b47d84;
+  border: 1px solid var(--heart-border);
   border-radius: 999px;
-  background: #fff6f7;
-  color: #8f2f44;
+  background: var(--heart-bg);
+  color: var(--heart-text);
   cursor: pointer;
   width: 3rem;
   height: 3rem;
@@ -132,9 +222,9 @@ body {
 }
 
 .heart-button-active {
-  background: #ffecef;
-  color: #5a1d2f;
-  border-color: #6e3345;
+  background: var(--heart-active-bg);
+  color: var(--heart-active-text);
+  border-color: var(--heart-active-border);
 }
 
 .heart-button:disabled {
@@ -163,7 +253,7 @@ body {
 
 .section-subtitle {
   margin: 0.4rem 0 0;
-  color: #5f5547;
+  color: var(--subtle-text);
   font-size: 0.9rem;
 }
 
@@ -176,10 +266,10 @@ body {
 }
 
 .favourite-row {
-  border: 1px solid #c7baa3;
+  border: 1px solid var(--favourite-row-border);
   border-radius: 0.7rem;
   padding: 0.7rem;
-  background: #fcfaf4;
+  background: var(--favourite-row-bg);
 }
 
 .favourite-summary {
@@ -198,7 +288,7 @@ body {
 
 .favourite-meta {
   margin: 0.2rem 0 0;
-  color: #5f5547;
+  color: var(--subtle-text);
   font-size: 0.95rem;
 }
 
@@ -207,16 +297,16 @@ body {
   margin: 0.75rem 0 0;
   font-size: 0.98rem;
   line-height: 1.65;
-  color: #302b24;
+  color: var(--favourite-poem-text);
 }
 
 .empty-state,
 .status {
-  color: #544d43;
+  color: var(--status-text);
 }
 
 .status-error {
-  color: #8a1d1d;
+  color: var(--status-error);
 }
 
 .bottom-tabs {
@@ -229,15 +319,15 @@ body {
   align-items: center;
   padding: 0.7rem max(1rem, env(safe-area-inset-right)) calc(0.7rem + env(safe-area-inset-bottom))
     max(1rem, env(safe-area-inset-left));
-  border-top: 1px solid #c8b89e;
-  background: rgba(247, 239, 226, 0.96);
+  border-top: 1px solid var(--tabs-border);
+  background: var(--tabs-bg);
   backdrop-filter: blur(6px);
 }
 
 .tab-btn {
   border: 0;
   background: transparent;
-  color: #5b5143;
+  color: var(--tab-text);
   padding: 0.62rem 0.2rem;
   cursor: pointer;
   font-size: 1rem;
@@ -245,8 +335,15 @@ body {
 }
 
 .tab-btn-active {
-  color: #1f2a2a;
+  color: var(--tab-active-text);
   font-weight: 700;
+}
+
+.tab-logo {
+  height: 1rem;
+  width: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 .tab-heart-icon {
@@ -268,7 +365,7 @@ body {
 .tab-separator {
   width: 1px;
   height: 1.4rem;
-  background: #b6a98f;
+  background: var(--tab-separator);
   justify-self: center;
 }
 

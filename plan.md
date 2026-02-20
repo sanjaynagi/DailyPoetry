@@ -1,250 +1,184 @@
-# DailyPoetry Plan (Renewed)
+# DailyPoetry Plan (Live System)
 
-## 1. Current Status Summary
+## 1. Current State (As Of 2026-02-20)
 
-### 1.1 What Already Exists
+DailyPoetry is now live and functioning end-to-end.
 
-- `daily-poetry-ingest/`
-  - PoetryDB ingestion pipeline is working.
-  - Outputs:
-    - `poems.jsonl`
-    - `duplicates.jsonl`
-    - `authors.jsonl` (with nullable `image_url`)
-    - `report.json`
-  - Author image enrichment is implemented (Wikipedia lookup, nullable fallback).
+### 1.1 Live Components
+- Frontend (`daily-poetry-app`) deployed on Vercel.
+- Backend (`daily-poetry-api`) deployed on Render.
+- Database on Supabase Postgres.
+- Ingestion pipeline (`daily-poetry-ingest`) producing and enriching poem/author artifacts.
 
-- `daily-poetry-api/`
-  - FastAPI backend MVP exists.
-  - Endpoints implemented:
-    - `GET /v1/daily`
-    - `GET /v1/me/favourites`
-    - `POST /v1/me/favourites`
-  - Schema exists for:
-    - `authors`
-    - `poems`
-    - `daily_selection`
-    - `users`
-    - `favourites`
-  - UTC-based daily selection logic is implemented.
-  - Seed utility exists to import ingestion artifacts and schedule daily poems.
+### 1.2 Confirmed Working Flows
+- `GET /v1/daily` is serving real current data.
+- Anonymous auth issuance is implemented (`POST /v1/auth/anonymous`).
+- Favourites are backend-backed:
+  - `GET /v1/me/favourites`
+  - `POST /v1/me/favourites`
+  - `DELETE /v1/me/favourites/{poem_id}`
+- Favourites persist across refresh.
+- Favourites UI can display the poem text.
 
-- `daily-poetry-app/`
-  - PWA frontend exists with:
-    - Daily poem screen
-    - Favourites screen
-    - Bottom tab navigation
-    - Heart-style favourite control
-    - Offline/cached daily fallback
-  - Browser title is now `DailyPoetry`.
-
-### 1.2 What Is Not Yet Fully Production-Ready
-
-- Favourites removal is not yet API-complete (`DELETE` endpoint missing).
-- Auth is placeholder token-based (not full anonymous auth lifecycle).
-- No production hosting/deployment pipeline configured yet.
-- No observability/monitoring/alerting yet.
-- No scheduled operational job to guarantee future `daily_selection` coverage.
+### 1.3 Recent Stability Fixes
+- CORS configured for Vercel -> Render browser requests.
+- Supabase/Render connectivity resolved using proper connection settings.
+- `daily_selection.date` converted to real `DATE` in Supabase.
 
 ---
 
-## 2. Target: Fully Functional App
+## 2. Primary Goal (Next Stage)
 
-A fully functional DailyPoetry release means:
-
-1. Frontend served publicly (HTTPS) with working API integration.
-2. Backend API deployed with persistent Postgres.
-3. Daily poem always available for current UTC date.
-4. Favourites fully functional (add/list/remove) for anonymous users.
-5. Ingestion + seeding operational workflow documented and repeatable.
+Move from “working live app” to “operationally robust product” with safe content operations, predictable scheduling, and better production observability.
 
 ---
 
-## 3. External Services You Need
+## 3. Next Milestones
 
-## 3.1 Frontend Host (Recommended: Vercel)
+## Milestone A: Production Hardening (Immediate)
 
-- Create Vercel project from this repo.
-- Root directory: `daily-poetry-app`.
-- Build command: `npm run build`.
-- Output directory: `dist`.
-- Env var:
-  - `VITE_API_BASE_URL=https://<your-api-domain>`
+### Problem
+The app works, but runtime and operational safeguards are minimal.
 
-## 3.2 Backend Host (Recommended: Render or Fly.io)
+### Tasks
+1. Remove temporary DB type-compatibility workarounds now that `daily_selection.date` is `DATE`.
+2. Add structured API error logging.
+3. Add API-level request logging for key endpoints.
+4. Add explicit health/readiness checks for DB connectivity.
 
-- Create backend service from this repo.
-- Root directory: `daily-poetry-api`.
-- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-- Env var:
-  - `DAILY_POETRY_DATABASE_URL=<postgres-connection-string>`
+### Success Criteria
+- API behaves cleanly with strict date typing.
+- Failures are observable from logs without manual reproduction.
 
-## 3.3 Managed Postgres (Recommended: Neon, Supabase, or Render Postgres)
+## Milestone B: Data Operations Reliability
 
-- Provision a Postgres instance.
-- Set connection string in backend host.
-- Run migrations + seed job.
+### Problem
+Daily schedule continuity depends on manual seeding behavior.
 
-## 3.4 Optional Scheduled Job Service
+### Tasks
+1. Add automated schedule maintenance job (Render cron or GitHub Actions).
+2. Guarantee at least N future days scheduled (e.g., 365).
+3. Add alert/notification path when future scheduled days drop below threshold (e.g., 30).
 
-- Use host-native cron/job feature (Render Cron, Fly Machines cron, GitHub Actions).
-- Daily/weekly job to ensure `daily_selection` is pre-populated ahead.
+### Success Criteria
+- `/v1/daily` does not fail due to schedule exhaustion.
+- Team receives early warning before schedule gaps.
+
+## Milestone C: Editorial Safety
+
+### Problem
+All ingested poems are schedulable without an editorial state gate.
+
+### Tasks
+1. Add `editorial_status` to poems (`pending`, `approved`, `rejected`).
+2. Update schedule generation to use only `approved` poems.
+3. Add simple admin script to review/approve poems.
+
+### Success Criteria
+- Daily poem selection only uses curated content.
+- Content quality issues can be controlled without code changes.
+
+## Milestone D: UX and Product Iteration
+
+### Problem
+Core UX works but still has room for refinement and trust cues.
+
+### Tasks
+1. Improve favourite sync feedback (e.g., “Synced” / “Retrying”).
+2. Add dedicated favourite poem detail view (instead of only expandable inline details).
+3. Add empty/error states with clearer user messaging.
+4. Continue typography/layout polish for mobile reading comfort.
+
+### Success Criteria
+- User sees reliable feedback for sync state.
+- Favourite poem reading flow feels intentional and clean.
+
+## Milestone E: Monitoring and Release Discipline
+
+### Problem
+No formal operational dashboard/alerts/release checklist in place.
+
+### Tasks
+1. Add production monitoring tool and alerting rules.
+2. Add deployment checklist (API first, then frontend).
+3. Add smoke test script for post-deploy verification:
+- `/health`
+- `/v1/daily`
+- anonymous token issuance
+- favourite add/remove
+
+### Success Criteria
+- Regressions are detected quickly.
+- Releases are repeatable and lower-risk.
 
 ---
 
-## 4. Execution Plan to Production
+## 4. What You Should Do Next (Operator Checklist)
 
-## Phase A: Complete Backend Contract
-
-### Tasks
-- Add `DELETE /v1/me/favourites/{poem_id}`.
-- Wire idempotent delete behavior.
-- Add tests for delete flow.
-
-### Success Criteria
-- App can add/list/remove favourites using API only.
-
-## Phase B: Auth Hardening (Anonymous)
-
-### Tasks
-- Implement anonymous identity issuance (or signed token strategy).
-- Replace ad-hoc bearer handling with validated token contract.
-- Update frontend token storage/bootstrap logic.
-
-### Success Criteria
-- New user can open app and favourite without manual token setup.
-
-## Phase C: Data Operations
-
-### Tasks
-- Run ingestion when needed (`daily-poetry-ingest`).
-- Seed/update backend from artifacts:
-  - `python -m app.seed_from_artifacts --artifacts-dir ../artifacts/ingestion --schedule-days 365`
-- Add routine scheduling refresh process.
-
-### Success Criteria
-- `/v1/daily` never returns missing-date 404 in normal operation.
-
-## Phase D: Deployments
-
-### Tasks
-- Deploy backend + DB first.
-- Validate API health and real payloads.
-- Deploy frontend with correct API base URL.
-- Smoke test full user flow in production URL.
-
-### Success Criteria
-- Public URL works end-to-end on mobile and desktop.
-
-## Phase E: Reliability and Safety
-
-### Tasks
-- Add structured logs and request IDs.
-- Add health/readiness checks.
-- Add alerts for:
-  - no daily selection for UTC date
-  - repeated API 5xx
-- Add backup/restore policy for Postgres.
-
-### Success Criteria
-- Operational issues are detectable and recoverable.
+1. Redeploy latest backend and frontend commits.
+2. Confirm CORS env is exact (no trailing slash origins).
+3. Run smoke checks in production:
+- `/health`
+- `/v1/daily`
+- favourite add/remove from browser.
+4. Set up schedule-maintenance cron.
+5. Prioritize editorial_status implementation.
 
 ---
 
-## 5. Immediate Checklist (What You Should Do Next)
-
-1. Choose and provision services:
-- Vercel (frontend)
-- Render/Fly (backend)
-- Neon/Supabase/Render Postgres (database)
-
-2. Deploy backend first:
-- Set `DAILY_POETRY_DATABASE_URL`
-- Start service
-- Confirm `/health` and `/v1/daily`
-
-3. Seed real data:
-- Run seed command in backend environment
-- Verify `daily_selection` for current UTC date
-
-4. Deploy frontend:
-- Set `VITE_API_BASE_URL`
-- Verify daily poem renders and heart favourite posts
-
-5. Implement delete-favourite endpoint next (critical remaining feature).
-
----
-
-## 6. Commands Reference
+## 5. Command Reference
 
 ## Ingestion
-
 ```bash
 cd daily-poetry-ingest
 PYTHONPATH=src python -m daily_poetry_ingest.cli --output-dir ../artifacts/ingestion
 ```
 
-## API local run
-
+## API local
 ```bash
 cd daily-poetry-api
 python -m pip install -e '.[dev]'
+pytest -q
 uvicorn app.main:app --reload
 ```
 
-## Seed API DB from artifacts
-
+## Seed from artifacts
 ```bash
 cd daily-poetry-api
 python -m app.seed_from_artifacts --artifacts-dir ../artifacts/ingestion --schedule-days 365
 ```
 
-## App local run
-
+## App local
 ```bash
 cd daily-poetry-app
 npm install
+npm run build
 npm run dev
 ```
 
 ---
 
-## 7. Release Readiness Gate
+## 6. Definition of “Healthy Production”
 
-Before public launch, confirm all are true:
+- Daily poem endpoint stable and UTC-correct.
+- Favourites fully remote-synced for anonymous users.
+- 365 future daily selections maintained.
+- Editorial gate controls publishable poems.
+- Monitoring and alerts active for API and schedule health.
 
-- [ ] `GET /v1/daily` stable and UTC-correct.
-- [ ] favourites add/list/remove fully API-backed.
-- [ ] anonymous auth flow works without manual intervention.
-- [ ] 30+ future days scheduled in `daily_selection`.
-- [ ] frontend + backend deployed with HTTPS.
-- [ ] error monitoring and logs available.
 
-## 8. Phase 8: Anonymous Auth + Full Favourite Sync
+## 9. Phase 9: Dark Mode UI
 
 ### Problem Definition
-- Frontend currently requires manual token configuration for backend favourite sync.
-- Unfavourite is local-only behavior and not persisted to backend.
+- UI currently ships with a single light theme and no user-controlled theme preference.
 
 ### Proposed Solution
-1. Backend: add anonymous auth issuance endpoint:
-- `POST /v1/auth/anonymous`
-- Returns a generated token and user id; creates user if needed.
-
-2. Frontend: token bootstrap on first load:
-- If no token in local storage, request anonymous token from backend.
-- Store token in `daily-poetry.auth-token`.
-- Use it for all favourites requests.
-
-3. Backend: add delete endpoint:
-- `DELETE /v1/me/favourites/{poem_id}`
-- Idempotent removal semantics.
-
-4. Frontend: wire unfavourite to backend delete:
-- Keep optimistic UI behavior.
-- Surface sync errors explicitly.
+1. Add light/dark color tokens using CSS variables.
+2. Add theme toggle control in app shell.
+3. Persist user preference in localStorage.
+4. Default to system preference when no explicit user setting exists.
 
 ### Success Criteria
-- New user can favourite/unfavourite without manually setting token.
-- Favourites source is backend (`remote`) by default after bootstrap.
-- Refresh preserves favourites via API, not local-only fallback.
-- API tests cover anonymous token issuance and delete favourite flow.
+- User can switch between light and dark mode.
+- Theme choice persists across reloads.
+- Dark mode is legible and visually coherent across primary screens.
