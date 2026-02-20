@@ -60,6 +60,15 @@ function App() {
 
   return (
     <main className="page">
+      <button
+        className="theme-toggle app-theme-toggle"
+        type="button"
+        onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+        aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      >
+        {theme === "light" ? "☾" : "☀"}
+      </button>
       <section className="content-wrap">
         {loadingDaily ? (
           <section className="loading-splash" aria-label="Loading">
@@ -76,7 +85,6 @@ function App() {
             isFavourite={isFavourite(daily.poem.id)}
             favouriteSyncing={syncingFavourites}
             onToggleFavourite={() => void toggleFavourite(daily)}
-            onToggleTheme={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
           />
         ) : null}
 
