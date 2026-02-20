@@ -34,44 +34,52 @@ export function FavouritesView({
         <img className="top-logo" src={topLogoSrc} alt="DailyPoetry" />
       </div>
       <section className="panel">
-        <h2 className="section-title">Favourites</h2>
         <section className="notification-panel" aria-label="Daily reminders">
           <div className="notification-row">
-            <span className="notification-label">Daily reminders</span>
+            <span className="notification-label">Daily reminder</span>
             <button
-              className={notificationsEnabled ? "notification-toggle notification-toggle-active" : "notification-toggle"}
+              className={notificationsEnabled ? "notification-switch notification-switch-active" : "notification-switch"}
               type="button"
+              role="switch"
+              aria-checked={notificationsEnabled}
+              aria-label={notificationsEnabled ? "Disable daily reminder" : "Enable daily reminder"}
               onClick={onToggleNotifications}
               disabled={!notificationsSupported || notificationsLoading || notificationsSyncing}
             >
-              {notificationsSyncing ? "..." : notificationsEnabled ? "On" : "Off"}
+              <span className="notification-switch-track" aria-hidden="true">
+                <span className="notification-switch-thumb" />
+              </span>
             </button>
           </div>
+          {notificationsSyncing ? <p className="notification-note">Updating reminder...</p> : null}
           {!notificationsSupported ? <p className="notification-note">Notifications are not supported here.</p> : null}
           {notificationsError ? <p className="status status-error">{notificationsError}</p> : null}
         </section>
-        {loading ? <p className="status">Loading favourites...</p> : null}
-        {error ? <p className="status status-error">{error}</p> : null}
+        <section className="favourites-box" aria-label="Favourites">
+          <h2 className="section-title">Favourites</h2>
+          {loading ? <p className="status">Loading favourites...</p> : null}
+          {error ? <p className="status status-error">{error}</p> : null}
 
-        {!loading && favourites.length === 0 ? (
-          <p className="empty-state">No favourites yet.</p>
-        ) : (
-          <ul className="favourites-list">
-            {favourites.map((item) => (
-              <li className="favourite-row" key={item.poemId}>
-                <details>
-                  <summary className="favourite-summary">
-                    <p className="favourite-title">{item.title}</p>
-                    <p className="favourite-meta">
-                      {item.author} · {formatIsoDate(item.dateFeatured, "short")}
-                    </p>
-                  </summary>
-                  {item.poemText ? <pre className="favourite-poem-text">{item.poemText}</pre> : null}
-                </details>
-              </li>
-            ))}
-          </ul>
-        )}
+          {!loading && favourites.length === 0 ? (
+            <p className="empty-state">No favourites yet.</p>
+          ) : (
+            <ul className="favourites-list">
+              {favourites.map((item) => (
+                <li className="favourite-row" key={item.poemId}>
+                  <details>
+                    <summary className="favourite-summary">
+                      <p className="favourite-title">{item.title}</p>
+                      <p className="favourite-meta">
+                        {item.author} · {formatIsoDate(item.dateFeatured, "short")}
+                      </p>
+                    </summary>
+                    {item.poemText ? <pre className="favourite-poem-text">{item.poemText}</pre> : null}
+                  </details>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </section>
     </>
   );

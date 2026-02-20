@@ -266,8 +266,12 @@ body::after {
 .notification-panel {
   border: 1px solid var(--favourite-row-border);
   border-radius: 0.92rem;
-  background: var(--favourite-row-bg);
-  padding: 0.72rem 0.84rem;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--favourite-row-bg) 88%, white 12%) 0%,
+    color-mix(in srgb, var(--panel-bg) 88%, transparent) 100%
+  );
+  padding: 0.8rem 0.9rem;
   margin: 0.2rem 0 1rem;
 }
 
@@ -279,35 +283,65 @@ body::after {
 }
 
 .notification-label {
-  color: var(--subtle-text);
-  font-size: 0.9rem;
-}
-
-.notification-toggle {
-  border: 1px solid var(--panel-border);
-  border-radius: 999px;
-  background: transparent;
   color: var(--text-main);
-  padding: 0.22rem 0.72rem;
-  cursor: pointer;
-  font-size: 0.84rem;
+  font-size: 0.93rem;
   font-weight: 600;
 }
 
-.notification-toggle-active {
-  border-color: var(--brand-accent);
-  background: color-mix(in srgb, var(--brand-accent-soft) 72%, transparent);
+.notification-switch {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
-.notification-toggle:disabled {
-  opacity: 0.68;
+.notification-switch:disabled {
+  opacity: 0.62;
   cursor: not-allowed;
 }
 
+.notification-switch-track {
+  width: 2.7rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--panel-border) 75%, transparent);
+  background: color-mix(in srgb, var(--subtle-text) 26%, transparent);
+  display: flex;
+  align-items: center;
+  padding: 0.12rem;
+  transition: background-color 180ms ease;
+}
+
+.notification-switch-thumb {
+  width: 1.12rem;
+  height: 1.12rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, white 82%, var(--panel-bg) 18%);
+  box-shadow: 0 2px 8px rgba(20, 17, 14, 0.24);
+  transform: translateX(0);
+  transition: transform 180ms ease;
+}
+
+.notification-switch-active .notification-switch-track {
+  border-color: color-mix(in srgb, var(--brand-accent) 60%, var(--panel-border) 40%);
+  background: color-mix(in srgb, var(--brand-accent) 42%, var(--brand-accent-soft) 58%);
+}
+
+.notification-switch-active .notification-switch-thumb {
+  transform: translateX(1.18rem);
+}
+
 .notification-note {
-  margin: 0.35rem 0 0;
+  margin: 0.42rem 0 0;
   color: var(--subtle-text);
   font-size: 0.82rem;
+}
+
+.favourites-box {
+  border: 1px solid var(--favourite-row-border);
+  border-radius: 0.92rem;
+  background: var(--favourite-row-bg);
+  padding: 0.9rem;
 }
 
 .poem-title {
@@ -367,27 +401,25 @@ body::after {
   right: 0.9rem;
   bottom: 0;
   transform: translateY(50%);
-  border: 1px solid var(--heart-border);
-  border-radius: 999px;
-  background: var(--heart-bg);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--heart-text);
   cursor: pointer;
-  width: 2.95rem;
-  height: 2.95rem;
+  width: 3.05rem;
+  height: 3.05rem;
   display: grid;
   place-items: center;
-  box-shadow: 0 8px 20px rgba(25, 13, 18, 0.2);
+  box-shadow: none;
 }
 
 .heart-button:hover:enabled {
-  transform: translateY(50%) scale(1.03);
-  border-color: color-mix(in srgb, var(--heart-border) 82%, white 18%);
+  transform: translateY(50%) scale(1.06);
+  color: color-mix(in srgb, var(--brand-accent) 78%, var(--heart-text) 22%);
 }
 
 .heart-button-active {
-  background: var(--heart-active-bg);
   color: var(--heart-active-text);
-  border-color: var(--heart-active-border);
 }
 
 .heart-button:disabled {
@@ -396,8 +428,8 @@ body::after {
 }
 
 .heart-icon {
-  width: 1.28rem;
-  height: 1.28rem;
+  width: 1.48rem;
+  height: 1.48rem;
 }
 
 .heart-icon path {
@@ -424,7 +456,7 @@ body::after {
 
 .favourites-list {
   list-style: none;
-  margin: 1.05rem 0 0;
+  margin: 0.9rem 0 0;
   padding: 0;
   display: grid;
   gap: 0.78rem;
@@ -539,6 +571,7 @@ body::after {
 
 .theme-toggle:focus-visible,
 .heart-button:focus-visible,
+.notification-switch:focus-visible,
 .tab-btn:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--brand-accent) 70%, white 30%);
   outline-offset: 2px;
