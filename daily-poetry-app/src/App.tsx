@@ -72,7 +72,15 @@ function App() {
       <section className="content-wrap">
         {loadingDaily ? (
           <section className="loading-splash" aria-label="Loading">
-            <img className="loading-logo" src="/logo-transparent.png" alt="DailyPoetry" />
+            <div className="loading-shell">
+              <img className="loading-logo" src="/logo-transparent.png" alt="DailyPoetry" />
+              <p className="loading-title">Loading today's poem</p>
+              <p className="loading-subtitle">Waking up the API server. This can take a few seconds.</p>
+              <div className="loading-spinner" aria-hidden="true" />
+              <div className="loading-progress" aria-hidden="true">
+                <span className="loading-progress-fill" />
+              </div>
+            </div>
           </section>
         ) : null}
         {dailyError ? <p className="status status-error">{dailyError}</p> : null}
