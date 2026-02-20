@@ -1,7 +1,7 @@
 import { API_BASE_URL, STORAGE_KEYS } from "./constants";
 import { mockDailyPoem } from "./mockData";
 import { readJson, writeJson } from "./storage";
-import type { DailyPoemResponse, FavouritePoem } from "../types/poetry";
+import type { DailyPoemResponse, FavouritePoem, NotificationPreference } from "../types/poetry";
 
 type RawFavourite = {
   poem_id?: string;
@@ -17,6 +17,14 @@ type RawFavourite = {
 type AnonymousAuthResponse = {
   user_id: string;
   token: string;
+};
+
+type PushSubscriptionPayload = {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
 };
 
 function getStoredToken(): string | null {
@@ -164,5 +172,73 @@ export async function deleteFavourite(poemId: string): Promise<void> {
 
   if (!response.ok) {
     throw new Error(`delete favourite endpoint returned ${response.status}`);
+  }
+}
+
+export async function fetchNotificationPreference(): Promise<NotificationPreference> {
+  const endpoint = `${API_BASE_URL}/v1/me/notifications/preferences`;
+  const response = await fetch(endpoint, {
+    headers: {
+      Accept: "application/json",
+      ...(await authHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`notification preferences endpoint returned ${response.status}`);
+  }
+
+  return (await response.json()) as NotificationPreference;
+}
+
+export async function updateNotificationPreference(payload: NotificationPreference): Promise<NotificationPreference> {
+  const endpoint = `${API_BASE_URL}/v1/me/notifications/preferences`;
+  const response = await fetch(endpoint, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(await authHeaders()),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`update notification preferences endpoint returned ${response.status}`);
+  }
+
+  return (await response.json()) as NotificationPreference;
+}
+
+export async function createNotificationSubscription(payload: PushSubscriptionPayload): Promise<void> {
+  const endpoint = `${API_BASE_URL}/v1/me/notifications/subscriptions`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(await authHeaders()),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`create notification subscription endpoint returned ${response.status}`);
+  }
+}
+
+export async function deleteNotificationSubscription(endpointUrl: string): Promise<void> {
+  const endpoint = `${API_BASE_URL}/v1/me/notifications/subscriptions`;
+  const response = await fetch(endpoint, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...(await authHeaders()),
+    },
+    body: JSON.stringify({ endpoint: endpointUrl }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`delete notification subscription endpoint returned ${response.status}`);
   }
 }

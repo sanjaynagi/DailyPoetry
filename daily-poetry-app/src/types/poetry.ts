@@ -23,3 +23,9 @@ export type FavouritePoem = {
 };
 
 export type FavouritesSource = "remote" | "local";
+
+export type NotificationPreference = {
+  enabled: boolean;
+  time_zone: string;
+  local_hour: number;
+};

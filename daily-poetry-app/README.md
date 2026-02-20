@@ -20,6 +20,7 @@ npm run preview
 
 - `VITE_API_BASE_URL` (optional): backend base URL (default `http://localhost:8000`).
 - `VITE_AUTH_TOKEN` (optional): bearer token for `/v1/me/favourites` endpoints.
+- `VITE_VAPID_PUBLIC_KEY` (required for web push notification opt-in).
 
 You can also set a token at runtime in browser local storage under key:
 - `daily-poetry.auth-token`
@@ -38,6 +39,10 @@ You can also set a token at runtime in browser local storage under key:
   - API fetch from `/v1/daily`.
   - Fallback to cached daily poem in local storage.
   - Service worker registration and network-first caching for `/v1/daily`.
+- Notification opt-in:
+  - daily reminders toggle in today view.
+  - browser permission request + push subscription registration.
+  - push event rendering and notification click handling in `public/sw.js`.
 
 ## Key Files
 

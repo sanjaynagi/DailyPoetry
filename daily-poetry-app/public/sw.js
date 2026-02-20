@@ -33,6 +33,41 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
+self.addEventListener("push", (event) => {
+  const payload = parsePushPayload(event.data);
+  const title = payload.title || "DailyPoetry";
+  const options = {
+    body: payload.body || "Your daily poem is ready.",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    data: {
+      url: payload.url || "/",
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+      return undefined;
+    }),
+  );
+});
+
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
@@ -55,5 +90,20 @@ async function shellFallback(request) {
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match("/index.html");
     return cached || Response.error();
+  }
+}
+
+function parsePushPayload(data) {
+  if (!data) {
+    return {};
+  }
+  try {
+    return data.json();
+  } catch {
+    try {
+      return { body: data.text() };
+    } catch {
+      return {};
+    }
   }
 }

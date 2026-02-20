@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FavouritesView } from "./components/FavouritesView";
 import { TodayView } from "./components/TodayView";
 import { useFavourites } from "./hooks/useFavourites";
+import { useNotifications } from "./hooks/useNotifications";
 import { fetchDailyPoem } from "./lib/api";
 import { STORAGE_KEYS } from "./lib/constants";
 import type { DailyPoemResponse } from "./types/poetry";
@@ -32,6 +33,14 @@ function App() {
     isFavourite,
     toggleFavourite,
   } = useFavourites();
+  const {
+    supported: notificationsSupported,
+    enabled: notificationsEnabled,
+    loading: notificationsLoading,
+    syncing: notificationsSyncing,
+    error: notificationsError,
+    toggleNotifications,
+  } = useNotifications();
 
   useEffect(() => {
     async function loadDailyPoem() {
@@ -92,7 +101,13 @@ function App() {
             theme={theme}
             isFavourite={isFavourite(daily.poem.id)}
             favouriteSyncing={syncingFavourites}
+            notificationsSupported={notificationsSupported}
+            notificationsEnabled={notificationsEnabled}
+            notificationsLoading={notificationsLoading}
+            notificationsSyncing={notificationsSyncing}
+            notificationsError={notificationsError}
             onToggleFavourite={() => void toggleFavourite(daily)}
+            onToggleNotifications={() => void toggleNotifications()}
           />
         ) : null}
 

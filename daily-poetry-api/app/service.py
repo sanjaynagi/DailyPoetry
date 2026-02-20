@@ -5,6 +5,7 @@ from __future__ import annotations
 import secrets
 from datetime import datetime, timezone
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 from sqlalchemy import Select, String, cast, func, select
@@ -129,6 +130,110 @@ def create_favourite(db: Session, user: models.User, poem_id: str) -> None:
 def delete_favourite(db: Session, user: models.User, poem_id: str) -> None:
     existing = db.execute(
         select(models.Favourite).where(models.Favourite.user_id == user.id, models.Favourite.poem_id == poem_id)
+    ).scalar_one_or_none()
+    if existing is None:
+        return
+
+    db.delete(existing)
+    db.commit()
+
+
+def get_notification_preference(db: Session, user: models.User) -> dict:
+    preference = db.execute(
+        select(models.NotificationPreference).where(models.NotificationPreference.user_id == user.id)
+    ).scalar_one_or_none()
+    if preference is None:
+        return {"enabled": False, "time_zone": "UTC", "local_hour": 9}
+
+    return {
+        "enabled": bool(preference.enabled),
+        "time_zone": preference.time_zone,
+        "local_hour": preference.local_hour,
+    }
+
+
+def upsert_notification_preference(
+    db: Session,
+    user: models.User,
+    *,
+    enabled: bool,
+    time_zone: str,
+    local_hour: int,
+) -> dict:
+    try:
+        ZoneInfo(time_zone)
+    except Exception as exc:  # pragma: no cover - runtime zone DB variations
+        raise HTTPException(status_code=400, detail=f"Invalid time zone: {time_zone}") from exc
+
+    preference = db.execute(
+        select(models.NotificationPreference).where(models.NotificationPreference.user_id == user.id)
+    ).scalar_one_or_none()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    if preference is None:
+        preference = models.NotificationPreference(
+            user_id=user.id,
+            enabled=enabled,
+            time_zone=time_zone,
+            local_hour=local_hour,
+            updated_at=now,
+        )
+        db.add(preference)
+    else:
+        preference.enabled = enabled
+        preference.time_zone = time_zone
+        preference.local_hour = local_hour
+        preference.updated_at = now
+
+    db.commit()
+    return {
+        "enabled": bool(preference.enabled),
+        "time_zone": preference.time_zone,
+        "local_hour": preference.local_hour,
+    }
+
+
+def upsert_push_subscription(
+    db: Session,
+    user: models.User,
+    *,
+    endpoint: str,
+    p256dh: str,
+    auth: str,
+) -> str:
+    existing = db.execute(select(models.PushSubscription).where(models.PushSubscription.endpoint == endpoint)).scalar_one_or_none()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    if existing is None:
+        created = models.PushSubscription(
+            id=str(uuid4()),
+            user_id=user.id,
+            endpoint=endpoint,
+            p256dh=p256dh,
+            auth=auth,
+            active=True,
+            created_at=now,
+            updated_at=now,
+        )
+        db.add(created)
+        db.commit()
+        return created.id
+
+    existing.user_id = user.id
+    existing.p256dh = p256dh
+    existing.auth = auth
+    existing.active = True
+    existing.updated_at = now
+    db.commit()
+    return existing.id
+
+
+def delete_push_subscription(db: Session, user: models.User, *, endpoint: str) -> None:
+    existing = db.execute(
+        select(models.PushSubscription).where(
+            models.PushSubscription.user_id == user.id,
+            models.PushSubscription.endpoint == endpoint,
+        )
     ).scalar_one_or_none()
     if existing is None:
         return

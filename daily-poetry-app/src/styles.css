@@ -273,6 +273,46 @@ body::after {
   letter-spacing: 0.01em;
 }
 
+.notification-row {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.notification-label {
+  color: var(--subtle-text);
+  font-size: 0.9rem;
+}
+
+.notification-toggle {
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-main);
+  padding: 0.22rem 0.72rem;
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.notification-toggle-active {
+  border-color: var(--brand-accent);
+  background: color-mix(in srgb, var(--brand-accent-soft) 72%, transparent);
+}
+
+.notification-toggle:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.notification-note {
+  margin: 0.35rem 0 0;
+  color: var(--subtle-text);
+  font-size: 0.82rem;
+}
+
 .poem-title {
   font-size: 2rem;
   line-height: 1.12;
