@@ -48,12 +48,56 @@ def test_seed_from_artifacts_includes_author_image(tmp_path: Path) -> None:
         session.query(User).delete()
         session.commit()
 
-    summary = seed_from_artifacts(artifacts, schedule_days=2, db_engine=test_engine, session_factory=TestSession)
+    summary = seed_from_artifacts(
+        artifacts,
+        schedule_days=2,
+        new_poem_status="approved",
+        db_engine=test_engine,
+        session_factory=TestSession,
+    )
 
     assert summary["authors"] >= 1
     assert summary["poems"] >= 1
+    assert summary["approved_poems"] >= 1
     assert summary["scheduled_days"] == 2
 
     with TestSession() as session:
         author = session.query(Author).filter(Author.name == "Percy Bysshe Shelley").one()
         assert author.image_url == "https://upload.wikimedia.org/example.jpg"
+
+
+def test_seed_requires_approved_poems_for_schedule(tmp_path: Path) -> None:
+    artifacts = tmp_path / "artifacts"
+    artifacts.mkdir(parents=True)
+
+    poems = [
+        {
+            "title": "Ozymandias",
+            "author": "Percy Bysshe Shelley",
+            "text": "I met a traveller from an antique land",
+            "linecount": 1,
+            "content_hash": "abc123",
+        }
+    ]
+    (artifacts / "authors.jsonl").write_text("", encoding="utf-8")
+    (artifacts / "poems.jsonl").write_text("\n".join(json.dumps(row) for row in poems) + "\n", encoding="utf-8")
+
+    from app.seed_from_artifacts import seed_from_artifacts
+
+    db_path = tmp_path / "seed.db"
+    test_engine = create_engine(f"sqlite:///{db_path}", future=True, connect_args={"check_same_thread": False})
+    TestSession = sessionmaker(autocommit=False, autoflush=False, bind=test_engine, future=True)
+
+    try:
+        seed_from_artifacts(
+            artifacts,
+            schedule_days=1,
+            new_poem_status="pending",
+            db_engine=test_engine,
+            session_factory=TestSession,
+        )
+        raised = False
+    except ValueError:
+        raised = True
+
+    assert raised

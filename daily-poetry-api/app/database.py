@@ -11,7 +11,14 @@ from app.config import get_database_url
 
 DATABASE_URL = get_database_url()
 
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+elif DATABASE_URL.startswith("postgresql+psycopg"):
+    # Supabase transaction poolers can fail with server-side prepared statements.
+    connect_args = {"prepare_threshold": None}
+else:
+    connect_args = {}
+
 engine = create_engine(DATABASE_URL, future=True, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
 Base = declarative_base()
