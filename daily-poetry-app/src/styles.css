@@ -174,16 +174,6 @@ body::after {
   max-width: 34ch;
 }
 
-.loading-spinner {
-  margin-top: 0.3rem;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 999px;
-  border: 2px solid color-mix(in srgb, var(--brand-accent) 25%, transparent);
-  border-top-color: var(--brand-accent);
-  animation: loading-spin 780ms linear infinite;
-}
-
 .loading-progress {
   width: min(280px, 82vw);
   height: 0.32rem;
@@ -273,8 +263,15 @@ body::after {
   letter-spacing: 0.01em;
 }
 
+.notification-panel {
+  border: 1px solid var(--favourite-row-border);
+  border-radius: 0.92rem;
+  background: var(--favourite-row-bg);
+  padding: 0.72rem 0.84rem;
+  margin: 0.2rem 0 1rem;
+}
+
 .notification-row {
-  margin-top: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -555,12 +552,6 @@ body::after {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes loading-spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 

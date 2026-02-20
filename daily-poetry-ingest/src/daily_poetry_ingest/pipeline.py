@@ -15,6 +15,7 @@ from typing import Any
 
 from daily_poetry_ingest.author_images import enrich_authors
 from daily_poetry_ingest.dedupe import dedupe_poems
+from daily_poetry_ingest.gutenberg import ingest_gutenberg_candidates, load_catalog_candidates
 from daily_poetry_ingest.normalize import NormalizationError, NormalizedPoem, normalize_record
 
 
@@ -116,7 +117,50 @@ def _write_jsonl(path: Path, records: list[dict]) -> None:
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def run_ingestion(
+def _build_report(
+    *,
+    source: str,
+    output_dir: Path,
+    canonical: list[dict],
+    duplicates: list[dict],
+    author_records: list[dict],
+    errors: list[dict],
+    extra_metrics: dict | None = None,
+) -> dict:
+    poems_path = output_dir / "poems.jsonl"
+    duplicates_path = output_dir / "duplicates.jsonl"
+    authors_path = output_dir / "authors.jsonl"
+    report_path = output_dir / "report.json"
+
+    _write_jsonl(poems_path, canonical)
+    _write_jsonl(duplicates_path, duplicates)
+    _write_jsonl(authors_path, author_records)
+
+    report = {
+        "source": source,
+        "authors_enriched": len(author_records),
+        "authors_without_images": sum(1 for record in author_records if record["image_url"] is None),
+        "canonical_poems": len(canonical),
+        "duplicates": len(duplicates),
+        "errors": errors,
+        "artifacts": {
+            "poems": str(poems_path),
+            "duplicates": str(duplicates_path),
+            "authors": str(authors_path),
+            "report": str(report_path),
+        },
+    }
+    if extra_metrics:
+        report.update(extra_metrics)
+
+    with report_path.open("w", encoding="utf-8") as handle:
+        json.dump(report, handle, indent=2)
+        handle.write("\n")
+
+    return report
+
+
+def run_poetrydb_ingestion(
     output_dir: Path,
     base_url: str = "https://poetrydb.org",
     fetch_workers: int = 4,
@@ -199,38 +243,88 @@ def run_ingestion(
     )
     errors.extend(author_errors)
 
-    poems_path = output_dir / "poems.jsonl"
-    duplicates_path = output_dir / "duplicates.jsonl"
-    authors_path = output_dir / "authors.jsonl"
-    report_path = output_dir / "report.json"
-
-    _write_jsonl(poems_path, canonical)
-    _write_jsonl(duplicates_path, duplicates)
-    _write_jsonl(authors_path, author_records)
-
-    report = {
-        "source": "poetrydb",
-        "base_url": base_url,
-        "authors_requested": len(authors),
-        "authors_enriched": len(author_records),
-        "authors_without_images": sum(1 for record in author_records if record["image_url"] is None),
-        "normalized_poems": len(normalized_payloads),
-        "canonical_poems": len(canonical),
-        "duplicates": len(duplicates),
-        "errors": errors,
-        "artifacts": {
-            "poems": str(poems_path),
-            "duplicates": str(duplicates_path),
-            "authors": str(authors_path),
-            "report": str(report_path),
+    return _build_report(
+        source="poetrydb",
+        output_dir=output_dir,
+        canonical=canonical,
+        duplicates=duplicates,
+        author_records=author_records,
+        errors=errors,
+        extra_metrics={
+            "base_url": base_url,
+            "authors_requested": len(authors),
+            "normalized_poems": len(normalized_payloads),
         },
-    }
+    )
 
-    with report_path.open("w", encoding="utf-8") as handle:
-        json.dump(report, handle, indent=2)
-        handle.write("\n")
 
-    return report
+def run_gutenberg_ingestion(
+    output_dir: Path,
+    *,
+    catalog_csv: Path,
+    texts_dir: Path,
+    language: str = "en",
+    timeout_seconds: float = 20.0,
+    retries: int = 3,
+    backoff_seconds: float = 0.5,
+    rate_limit_rps: float = 2.0,
+) -> dict:
+    """Run strict Project Gutenberg ingestion and write standard artifacts."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    candidates, metadata_errors = load_catalog_candidates(catalog_csv, language=language)
+    normalized_payloads, extract_errors = ingest_gutenberg_candidates(candidates, texts_dir=texts_dir)
+    canonical, duplicates = dedupe_poems(normalized_payloads)
+    unique_authors = sorted({record["author"] for record in canonical if isinstance(record.get("author"), str)})
+    author_records, author_errors = enrich_authors(
+        unique_authors,
+        timeout_seconds=timeout_seconds,
+        retries=retries,
+        backoff_seconds=backoff_seconds,
+        rate_limit_rps=rate_limit_rps,
+    )
+    errors = metadata_errors + extract_errors + author_errors
+
+    return _build_report(
+        source="gutenberg",
+        output_dir=output_dir,
+        canonical=canonical,
+        duplicates=duplicates,
+        author_records=author_records,
+        errors=errors,
+        extra_metrics={
+            "catalog_csv": str(catalog_csv),
+            "texts_dir": str(texts_dir),
+            "language": language,
+            "catalog_candidates": len(candidates),
+            "normalized_poems": len(normalized_payloads),
+        },
+    )
+
+
+def run_ingestion(
+    output_dir: Path,
+    base_url: str = "https://poetrydb.org",
+    fetch_workers: int = 4,
+    normalize_workers: int = 4,
+    timeout_seconds: float = 20.0,
+    retries: int = 3,
+    backoff_seconds: float = 0.5,
+    rate_limit_rps: float = 2.0,
+) -> dict:
+    """Backward-compatible alias for PoetryDB ingestion."""
+
+    return run_poetrydb_ingestion(
+        output_dir=output_dir,
+        base_url=base_url,
+        fetch_workers=fetch_workers,
+        normalize_workers=normalize_workers,
+        timeout_seconds=timeout_seconds,
+        retries=retries,
+        backoff_seconds=backoff_seconds,
+        rate_limit_rps=rate_limit_rps,
+    )
 
 
 def auto_worker_split(cpu_count: int | None = None) -> tuple[int, int]:
@@ -247,14 +341,17 @@ def auto_worker_split(cpu_count: int | None = None) -> tuple[int, int]:
 def print_report(report: dict) -> None:
     """Human-readable summary for CLI usage."""
 
-    lines = [
-        "Ingestion complete",
-        f"authors_requested: {report['authors_requested']}",
-        f"authors_enriched: {report['authors_enriched']}",
-        f"authors_without_images: {report['authors_without_images']}",
-        f"normalized_poems: {report['normalized_poems']}",
-        f"canonical_poems: {report['canonical_poems']}",
-        f"duplicates: {report['duplicates']}",
-        f"errors: {len(report['errors'])}",
-    ]
+    lines = ["Ingestion complete", f"source: {report['source']}"]
+    for key in (
+        "authors_requested",
+        "catalog_candidates",
+        "authors_enriched",
+        "authors_without_images",
+        "normalized_poems",
+        "canonical_poems",
+        "duplicates",
+    ):
+        if key in report:
+            lines.append(f"{key}: {report[key]}")
+    lines.append(f"errors: {len(report['errors'])}")
     sys.stdout.write("\n".join(lines) + "\n")

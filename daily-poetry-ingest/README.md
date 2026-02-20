@@ -1,6 +1,6 @@
 # Daily Poetry Ingestion Tool
 
-PoetryDB ingestion pipeline for Daily Poetry.
+Ingestion pipelines for Daily Poetry (PoetryDB and Project Gutenberg).
 
 ## Runtime
 
@@ -15,14 +15,27 @@ python -m pip install -e .
 
 ## Run
 
+PoetryDB (default):
+
 ```bash
-daily-poetry-ingest --output-dir ../artifacts/ingestion
+daily-poetry-ingest --source poetrydb --output-dir ../artifacts/ingestion
+```
+
+Project Gutenberg (strict extraction):
+
+```bash
+daily-poetry-ingest \
+  --source gutenberg \
+  --gutenberg-catalog-csv /path/to/pg_catalog.csv \
+  --gutenberg-texts-dir /path/to/gutenberg-texts \
+  --gutenberg-language en \
+  --output-dir ../artifacts/ingestion
 ```
 
 Or without installing the script:
 
 ```bash
-PYTHONPATH=src python -m daily_poetry_ingest.cli --output-dir ../artifacts/ingestion
+PYTHONPATH=src python -m daily_poetry_ingest.cli --source poetrydb --output-dir ../artifacts/ingestion
 ```
 
 ## Outputs
@@ -40,3 +53,4 @@ The command writes:
 - Line and stanza formatting is preserved from PoetryDB `lines` data.
 - Multiprocessing with queues is used for fetch and normalization stages.
 - Author images are enriched from Wikipedia when available; when unavailable, `image_url` is `null`.
+- Gutenberg ingestion uses strict heuristics to prioritize full/accurate poem extraction over recall.
