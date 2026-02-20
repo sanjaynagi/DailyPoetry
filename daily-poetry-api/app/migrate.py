@@ -10,6 +10,49 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 
 
+def _coerce_postgres_notification_flag_columns_to_boolean(connection) -> None:
+    # Older production databases may have INTEGER flag columns from early SQLite-first DDL.
+    # Coerce these to BOOLEAN so SQLAlchemy bool writes do not fail on Postgres.
+    columns = [
+        ("push_subscriptions", "active"),
+        ("notification_preferences", "enabled"),
+    ]
+
+    for table_name, column_name in columns:
+        type_row = connection.execute(
+            text(
+                """
+                SELECT data_type
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = :table_name
+                  AND column_name = :column_name
+                """
+            ),
+            {"table_name": table_name, "column_name": column_name},
+        ).fetchone()
+
+        if type_row is None:
+            continue
+
+        data_type = str(type_row[0]).lower()
+        if data_type == "boolean":
+            continue
+
+        if data_type not in {"smallint", "integer", "bigint"}:
+            continue
+
+        connection.execute(
+            text(
+                f"""
+                ALTER TABLE {table_name}
+                ALTER COLUMN {column_name} TYPE boolean
+                USING CASE WHEN {column_name} = 0 THEN FALSE ELSE TRUE END
+                """
+            )
+        )
+
+
 def run_sql_migrations(engine: Engine) -> None:
     migrations_dir = Path(__file__).resolve().parent.parent / "migrations"
     migration_files = sorted(migrations_dir.glob("*.sql"))
@@ -46,3 +89,6 @@ def run_sql_migrations(engine: Engine) -> None:
                         if "duplicate column name" in message or "already exists" in message:
                             continue
                         raise
+
+        if dialect_name == "postgresql":
+            _coerce_postgres_notification_flag_columns_to_boolean(connection)
