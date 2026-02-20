@@ -152,22 +152,22 @@ body::after {
 }
 
 .theme-toggle {
-  border: 1px solid transparent;
-  background: color-mix(in srgb, var(--panel-bg) 70%, transparent);
+  border: 0;
+  background: transparent;
   color: var(--text-main);
-  border-radius: 999px;
-  padding: 0.38rem 0.66rem;
-  font-size: 0.9rem;
+  border-radius: 0;
+  padding: 0.12rem 0.2rem;
+  font-size: 1.22rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(15, 12, 10, 0.1);
-  min-width: 2.1rem;
-  min-height: 2.1rem;
+  box-shadow: none;
+  min-width: auto;
+  min-height: auto;
 }
 
 .theme-toggle:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--brand-accent) 45%, transparent);
+  color: color-mix(in srgb, var(--brand-accent) 74%, var(--text-main) 26%);
 }
 
 .app-theme-toggle {
