@@ -42,6 +42,8 @@ def _coerce_postgres_notification_flag_columns_to_boolean(connection) -> None:
         if data_type not in {"smallint", "integer", "bigint"}:
             continue
 
+        # Legacy integer defaults (0/1) must be removed before Postgres can alter type.
+        connection.execute(text(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} DROP DEFAULT"))
         connection.execute(
             text(
                 f"""
@@ -51,6 +53,9 @@ def _coerce_postgres_notification_flag_columns_to_boolean(connection) -> None:
                 """
             )
         )
+        # Restore semantic defaults for new rows.
+        default_literal = "TRUE" if (table_name, column_name) == ("push_subscriptions", "active") else "FALSE"
+        connection.execute(text(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} SET DEFAULT {default_literal}"))
 
 
 def run_sql_migrations(engine: Engine) -> None:
