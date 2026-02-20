@@ -81,7 +81,12 @@ function App() {
         ) : null}
 
         {viewMode === "favourites" ? (
-          <FavouritesView favourites={favourites} loading={loadingFavourites} error={favouritesError} />
+          <FavouritesView
+            favourites={favourites}
+            loading={loadingFavourites}
+            error={favouritesError}
+            theme={theme}
+          />
         ) : null}
       </section>
 
@@ -94,7 +99,6 @@ function App() {
         >
           <img className="tab-logo" src={dailyPoemLogoSrc} alt="DailyPoetry" />
         </button>
-        <span className="tab-separator" aria-hidden="true" />
         <button
           className={viewMode === "favourites" ? "tab-btn tab-btn-active" : "tab-btn"}
           type="button"

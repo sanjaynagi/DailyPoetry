@@ -1,4 +1,5 @@
 import type { DailyPoemResponse } from "../types/poetry";
+import { formatIsoDate } from "../lib/date";
 
 type TodayViewProps = {
   daily: DailyPoemResponse;
@@ -18,6 +19,7 @@ export function TodayView({
   onToggleTheme,
 }: TodayViewProps) {
   const topLogoSrc = theme === "dark" ? "/dailypoetry-light.png" : "/dailypoetry-dark.png";
+  const formattedDate = formatIsoDate(daily.date, "long");
 
   return (
     <>
@@ -26,7 +28,7 @@ export function TodayView({
       </div>
       <section className="panel">
         <header className="panel-header">
-          <p className="date-label">{daily.date}</p>
+          <p className="date-label">{formattedDate}</p>
           <button
             className="theme-toggle"
             type="button"
