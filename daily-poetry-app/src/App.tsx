@@ -3,14 +3,24 @@ import { FavouritesView } from "./components/FavouritesView";
 import { TodayView } from "./components/TodayView";
 import { useFavourites } from "./hooks/useFavourites";
 import { fetchDailyPoem } from "./lib/api";
+import { STORAGE_KEYS } from "./lib/constants";
 import type { DailyPoemResponse } from "./types/poetry";
 
 type ViewMode = "daily_poem" | "favourites";
+type ThemeMode = "light" | "dark";
+
+function getInitialTheme(): ThemeMode {
+  const stored = localStorage.getItem(STORAGE_KEYS.theme);
+  if (stored === "light" || stored === "dark") {
+    return stored;
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("daily_poem");
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [daily, setDaily] = useState<DailyPoemResponse | null>(null);
-  const [fromCache, setFromCache] = useState(false);
   const [loadingDaily, setLoadingDaily] = useState(true);
   const [dailyError, setDailyError] = useState<string | null>(null);
 
@@ -19,7 +29,6 @@ function App() {
     loading: loadingFavourites,
     syncing: syncingFavourites,
     error: favouritesError,
-    source: favouritesSource,
     isFavourite,
     toggleFavourite,
   } = useFavourites();
@@ -32,7 +41,6 @@ function App() {
       try {
         const result = await fetchDailyPoem();
         setDaily(result.data);
-        setFromCache(result.fromCache);
       } catch (loadError) {
         setDailyError(loadError instanceof Error ? loadError.message : "Failed to load daily poem");
       } finally {
@@ -43,20 +51,32 @@ function App() {
     void loadDailyPoem();
   }, []);
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(STORAGE_KEYS.theme, theme);
+  }, [theme]);
+
+  const dailyPoemLogoSrc = theme === "dark" ? "/dailypoetry-light.png" : "/dailypoetry-dark.png";
+
   return (
     <main className="page">
       <section className="content-wrap">
-        {loadingDaily ? <p className="status">Loading daily poem...</p> : null}
+        {loadingDaily ? (
+          <section className="loading-splash" aria-label="Loading">
+            <img className="loading-logo" src="/logo-transparent.png" alt="DailyPoetry" />
+          </section>
+        ) : null}
         {dailyError ? <p className="status status-error">{dailyError}</p> : null}
         {syncingFavourites ? <p className="status">Syncing favourites...</p> : null}
 
         {!loadingDaily && daily && viewMode === "daily_poem" ? (
           <TodayView
             daily={daily}
-            fromCache={fromCache}
+            theme={theme}
             isFavourite={isFavourite(daily.poem.id)}
             favouriteSyncing={syncingFavourites}
             onToggleFavourite={() => void toggleFavourite(daily)}
+            onToggleTheme={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
           />
         ) : null}
 
@@ -65,7 +85,7 @@ function App() {
             favourites={favourites}
             loading={loadingFavourites}
             error={favouritesError}
-            source={favouritesSource}
+            theme={theme}
           />
         ) : null}
       </section>
@@ -75,10 +95,10 @@ function App() {
           className={viewMode === "daily_poem" ? "tab-btn tab-btn-active" : "tab-btn"}
           type="button"
           onClick={() => setViewMode("daily_poem")}
+          aria-label="DailyPoem"
         >
-          DailyPoem
+          <img className="tab-logo" src={dailyPoemLogoSrc} alt="DailyPoetry" />
         </button>
-        <span className="tab-separator" aria-hidden="true" />
         <button
           className={viewMode === "favourites" ? "tab-btn tab-btn-active" : "tab-btn"}
           type="button"
