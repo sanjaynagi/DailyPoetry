@@ -100,13 +100,7 @@ function App() {
             theme={theme}
             isFavourite={isFavourite(daily.poem.id)}
             favouriteSyncing={syncingFavourites}
-            notificationsSupported={notificationsSupported}
-            notificationsEnabled={notificationsEnabled}
-            notificationsLoading={notificationsLoading}
-            notificationsSyncing={notificationsSyncing}
-            notificationsError={notificationsError}
             onToggleFavourite={() => void toggleFavourite(daily)}
-            onToggleNotifications={() => void toggleNotifications()}
           />
         ) : null}
 
@@ -116,6 +110,12 @@ function App() {
             loading={loadingFavourites}
             error={favouritesError}
             theme={theme}
+            notificationsSupported={notificationsSupported}
+            notificationsEnabled={notificationsEnabled}
+            notificationsLoading={notificationsLoading}
+            notificationsSyncing={notificationsSyncing}
+            notificationsError={notificationsError}
+            onToggleNotifications={() => void toggleNotifications()}
           />
         ) : null}
       </section>

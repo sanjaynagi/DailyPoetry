@@ -6,9 +6,26 @@ type FavouritesViewProps = {
   loading: boolean;
   error: string | null;
   theme: "light" | "dark";
+  notificationsSupported: boolean;
+  notificationsEnabled: boolean;
+  notificationsLoading: boolean;
+  notificationsSyncing: boolean;
+  notificationsError: string | null;
+  onToggleNotifications: () => void;
 };
 
-export function FavouritesView({ favourites, loading, error, theme }: FavouritesViewProps) {
+export function FavouritesView({
+  favourites,
+  loading,
+  error,
+  theme,
+  notificationsSupported,
+  notificationsEnabled,
+  notificationsLoading,
+  notificationsSyncing,
+  notificationsError,
+  onToggleNotifications,
+}: FavouritesViewProps) {
   const topLogoSrc = theme === "dark" ? "/dailypoetry-light.png" : "/dailypoetry-dark.png";
 
   return (
@@ -18,6 +35,21 @@ export function FavouritesView({ favourites, loading, error, theme }: Favourites
       </div>
       <section className="panel">
         <h2 className="section-title">Favourites</h2>
+        <section className="notification-panel" aria-label="Daily reminders">
+          <div className="notification-row">
+            <span className="notification-label">Daily reminders</span>
+            <button
+              className={notificationsEnabled ? "notification-toggle notification-toggle-active" : "notification-toggle"}
+              type="button"
+              onClick={onToggleNotifications}
+              disabled={!notificationsSupported || notificationsLoading || notificationsSyncing}
+            >
+              {notificationsSyncing ? "..." : notificationsEnabled ? "On" : "Off"}
+            </button>
+          </div>
+          {!notificationsSupported ? <p className="notification-note">Notifications are not supported here.</p> : null}
+          {notificationsError ? <p className="status status-error">{notificationsError}</p> : null}
+        </section>
         {loading ? <p className="status">Loading favourites...</p> : null}
         {error ? <p className="status status-error">{error}</p> : null}
 
