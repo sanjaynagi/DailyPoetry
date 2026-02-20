@@ -7,7 +7,6 @@ type TodayViewProps = {
   theme: "light" | "dark";
   favouriteSyncing: boolean;
   onToggleFavourite: () => void;
-  onToggleTheme: () => void;
 };
 
 export function TodayView({
@@ -16,7 +15,6 @@ export function TodayView({
   theme,
   favouriteSyncing,
   onToggleFavourite,
-  onToggleTheme,
 }: TodayViewProps) {
   const topLogoSrc = theme === "dark" ? "/dailypoetry-light.png" : "/dailypoetry-dark.png";
   const formattedDate = formatIsoDate(daily.date, "long");
@@ -27,18 +25,7 @@ export function TodayView({
         <img className="top-logo" src={topLogoSrc} alt="DailyPoetry" />
       </div>
       <section className="panel">
-        <header className="panel-header">
-          <p className="date-label">{formattedDate}</p>
-          <button
-            className="theme-toggle"
-            type="button"
-            onClick={onToggleTheme}
-            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-            title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-          >
-            {theme === "light" ? "☾" : "☀"}
-          </button>
-        </header>
+        <p className="date-label">{formattedDate}</p>
 
         <div className="poem-card-wrap">
           <article className="poem-card">

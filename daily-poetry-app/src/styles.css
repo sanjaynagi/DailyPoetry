@@ -170,6 +170,13 @@ body::after {
   border-color: color-mix(in srgb, var(--brand-accent) 45%, transparent);
 }
 
+.app-theme-toggle {
+  position: fixed;
+  top: calc(0.72rem + env(safe-area-inset-top));
+  right: max(0.72rem, env(safe-area-inset-right));
+  z-index: 30;
+}
+
 .panel {
   border: 1px solid color-mix(in srgb, var(--panel-border) 65%, transparent);
   background: var(--panel-bg);
@@ -178,13 +185,6 @@ body::after {
   box-shadow: 0 16px 34px rgba(20, 17, 14, 0.1);
   backdrop-filter: blur(7px);
   animation: fade-in-up 360ms ease both;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
 }
 
 .top-logo-wrap {
