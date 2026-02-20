@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS poems (
   title TEXT NOT NULL,
   text TEXT NOT NULL,
   linecount INTEGER NOT NULL,
+  editorial_status TEXT NOT NULL DEFAULT 'pending',
   author_id TEXT NOT NULL,
+  CONSTRAINT chk_poems_editorial_status CHECK (editorial_status IN ('pending', 'approved', 'rejected')),
   FOREIGN KEY (author_id) REFERENCES authors(id)
 );
 
@@ -37,6 +39,7 @@ CREATE TABLE IF NOT EXISTS favourites (
 );
 
 CREATE INDEX IF NOT EXISTS idx_poems_author_id ON poems(author_id);
+CREATE INDEX IF NOT EXISTS idx_poems_editorial_status ON poems(editorial_status);
 CREATE INDEX IF NOT EXISTS idx_daily_selection_poem_id ON daily_selection(poem_id);
 CREATE INDEX IF NOT EXISTS idx_favourites_user_id ON favourites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favourites_poem_id ON favourites(poem_id);

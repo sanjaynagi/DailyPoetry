@@ -39,7 +39,38 @@ python -m app.seed_from_artifacts --artifacts-dir ../artifacts/ingestion --sched
 
 This loads `authors.jsonl` and `poems.jsonl` into DB and schedules daily poems.
 Author `image_url` values from `authors.jsonl` are stored and served via `/v1/daily`.
+Schedule generation now uses only poems with `editorial_status='approved'`.
+
+For initial bootstrap where newly inserted poems should be immediately schedulable:
+
+```bash
+python -m app.seed_from_artifacts --artifacts-dir ../artifacts/ingestion --schedule-days 365 --new-poem-status approved
+```
 
 ## UTC Daily Selection
 
 `GET /v1/daily` resolves today's poem using current UTC date against `daily_selection.date`.
+
+## Editorial Moderation CLI
+
+Interactive moderation:
+
+```bash
+python -m app.editorial_cli interactive
+```
+
+Interactive mode now shows one random poem at a time and prompts:
+- `a` approve
+- `r` reject
+- `s` skip
+- `q` quit
+
+Useful commands:
+
+```bash
+python -m app.editorial_cli list --status pending --limit 30
+python -m app.editorial_cli approve --poem-id <POEM_ID>
+python -m app.editorial_cli reject --poem-id <POEM_ID>
+python -m app.editorial_cli stats
+python -m app.editorial_cli auto-reject-long --max-lines 50 --status pending
+```

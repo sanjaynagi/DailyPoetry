@@ -17,6 +17,8 @@ from app.database import SessionLocal, engine
 from app.migrate import run_sql_migrations
 from app.models import Author, DailySelection, Poem
 
+EDITORIAL_STATUSES = {"pending", "approved", "rejected"}
+
 
 def author_id_from_name(name: str) -> str:
     return str(uuid5(NAMESPACE_DNS, f"author:{name.strip().lower()}"))
@@ -82,7 +84,12 @@ def _upsert_authors(db: Session, author_rows: list[dict], poem_rows: list[dict])
     return id_map
 
 
-def _upsert_poems(db: Session, poem_rows: list[dict], author_ids: dict[str, str]) -> list[str]:
+def _upsert_poems(
+    db: Session, poem_rows: list[dict], author_ids: dict[str, str], *, new_poem_status: str = "pending"
+) -> list[str]:
+    if new_poem_status not in EDITORIAL_STATUSES:
+        raise ValueError(f"Unsupported editorial status: {new_poem_status}")
+
     poem_ids: list[str] = []
     for row in poem_rows:
         title = row.get("title")
@@ -111,6 +118,7 @@ def _upsert_poems(db: Session, poem_rows: list[dict], author_ids: dict[str, str]
                     title=title.strip(),
                     text=text,
                     linecount=linecount,
+                    editorial_status=new_poem_status,
                     author_id=author_id,
                 )
             )
@@ -147,11 +155,18 @@ def _seed_daily_selection(db: Session, poem_ids: list[str], start_date: date, da
     return created
 
 
+def _fetch_approved_poem_ids(db: Session) -> list[str]:
+    rows = db.execute(select(Poem.id).where(Poem.editorial_status == "approved").order_by(Poem.id.asc())).all()
+    return [row[0] for row in rows]
+
+
 def seed_from_artifacts(
     artifacts_dir: Path,
     schedule_days: int,
     schedule_start: date | None = None,
     *,
+    new_poem_status: str = "pending",
+    require_approved_for_schedule: bool = True,
     db_engine: Engine = engine,
     session_factory: Callable[[], Session] = SessionLocal,
 ) -> dict:
@@ -165,13 +180,17 @@ def seed_from_artifacts(
 
     with session_factory() as db:
         author_ids = _upsert_authors(db, author_rows, poem_rows)
-        poem_ids = _upsert_poems(db, poem_rows, author_ids)
+        poem_ids = _upsert_poems(db, poem_rows, author_ids, new_poem_status=new_poem_status)
         start = schedule_start or datetime.now(timezone.utc).date()
-        scheduled = _seed_daily_selection(db, poem_ids, start, schedule_days)
+        approved_poem_ids = _fetch_approved_poem_ids(db)
+        if schedule_days > 0 and require_approved_for_schedule and not approved_poem_ids:
+            raise ValueError("No approved poems available for scheduling. Approve poems before creating schedule.")
+        scheduled = _seed_daily_selection(db, approved_poem_ids, start, schedule_days)
 
     return {
         "authors": len(author_ids),
         "poems": len(poem_ids),
+        "approved_poems": len(approved_poem_ids),
         "scheduled_days": scheduled,
         "start_date": (schedule_start or datetime.now(timezone.utc).date()).isoformat(),
     }
@@ -182,13 +201,31 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--artifacts-dir", type=Path, default=Path("../artifacts/ingestion"))
     parser.add_argument("--schedule-days", type=int, default=365)
     parser.add_argument("--schedule-start", type=str, default=None, help="YYYY-MM-DD (UTC)")
+    parser.add_argument(
+        "--new-poem-status",
+        type=str,
+        choices=sorted(EDITORIAL_STATUSES),
+        default="pending",
+        help="Editorial status to assign when inserting new poems.",
+    )
+    parser.add_argument(
+        "--allow-empty-approved-schedule",
+        action="store_true",
+        help="Do not fail when there are no approved poems for scheduling.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = _parse_args()
     schedule_start = date.fromisoformat(args.schedule_start) if args.schedule_start else None
-    summary = seed_from_artifacts(args.artifacts_dir, args.schedule_days, schedule_start)
+    summary = seed_from_artifacts(
+        args.artifacts_dir,
+        args.schedule_days,
+        schedule_start,
+        new_poem_status=args.new_poem_status,
+        require_approved_for_schedule=not args.allow_empty_approved_schedule,
+    )
     print(json.dumps(summary, indent=2))
 
 

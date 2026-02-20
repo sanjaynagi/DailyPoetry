@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Literal
 
 from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,6 +27,9 @@ class Poem(Base):
     title: Mapped[str] = mapped_column(Text, nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     linecount: Mapped[int] = mapped_column(Integer, nullable=False)
+    editorial_status: Mapped[Literal["pending", "approved", "rejected"]] = mapped_column(
+        Text, nullable=False, default="pending"
+    )
     author_id: Mapped[str] = mapped_column(String(36), ForeignKey("authors.id"), nullable=False)
 
 
