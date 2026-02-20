@@ -219,3 +219,32 @@ Before public launch, confirm all are true:
 - [ ] frontend + backend deployed with HTTPS.
 - [ ] error monitoring and logs available.
 
+## 8. Phase 8: Anonymous Auth + Full Favourite Sync
+
+### Problem Definition
+- Frontend currently requires manual token configuration for backend favourite sync.
+- Unfavourite is local-only behavior and not persisted to backend.
+
+### Proposed Solution
+1. Backend: add anonymous auth issuance endpoint:
+- `POST /v1/auth/anonymous`
+- Returns a generated token and user id; creates user if needed.
+
+2. Frontend: token bootstrap on first load:
+- If no token in local storage, request anonymous token from backend.
+- Store token in `daily-poetry.auth-token`.
+- Use it for all favourites requests.
+
+3. Backend: add delete endpoint:
+- `DELETE /v1/me/favourites/{poem_id}`
+- Idempotent removal semantics.
+
+4. Frontend: wire unfavourite to backend delete:
+- Keep optimistic UI behavior.
+- Surface sync errors explicitly.
+
+### Success Criteria
+- New user can favourite/unfavourite without manually setting token.
+- Favourites source is backend (`remote`) by default after bootstrap.
+- Refresh preserves favourites via API, not local-only fallback.
+- API tests cover anonymous token issuance and delete favourite flow.

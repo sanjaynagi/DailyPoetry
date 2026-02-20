@@ -3,13 +3,6 @@ import { mockDailyPoem } from "./mockData";
 import { readJson, writeJson } from "./storage";
 import type { DailyPoemResponse, FavouritePoem } from "../types/poetry";
 
-export class AuthNotConfiguredError extends Error {
-  constructor() {
-    super("Auth token is not configured for favourites endpoints");
-    this.name = "AuthNotConfiguredError";
-  }
-}
-
 type RawFavourite = {
   poem_id?: string;
   poemId?: string;
@@ -17,9 +10,16 @@ type RawFavourite = {
   author?: string;
   date_featured?: string;
   dateFeatured?: string;
+  poem_text?: string;
+  poemText?: string;
 };
 
-function getAuthToken(): string | null {
+type AnonymousAuthResponse = {
+  user_id: string;
+  token: string;
+};
+
+function getStoredToken(): string | null {
   const fromStorage = localStorage.getItem(STORAGE_KEYS.authToken);
   if (fromStorage && fromStorage.trim()) {
     return fromStorage;
@@ -33,12 +33,37 @@ function getAuthToken(): string | null {
   return null;
 }
 
-function authHeaders(): Record<string, string> {
-  const token = getAuthToken();
-  if (!token) {
-    throw new AuthNotConfiguredError();
+async function issueAnonymousToken(): Promise<string> {
+  const endpoint = `${API_BASE_URL}/v1/auth/anonymous`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`anonymous auth endpoint returned ${response.status}`);
   }
 
+  const payload = (await response.json()) as AnonymousAuthResponse;
+  if (!payload.token || !payload.token.trim()) {
+    throw new Error("anonymous auth endpoint did not return a token");
+  }
+
+  localStorage.setItem(STORAGE_KEYS.authToken, payload.token);
+  return payload.token;
+}
+
+async function ensureAuthToken(): Promise<string> {
+  const token = getStoredToken();
+  if (token) {
+    return token;
+  }
+
+  return issueAnonymousToken();
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await ensureAuthToken();
   return {
     Authorization: `Bearer ${token}`,
   };
@@ -55,6 +80,7 @@ function normalizeFavourite(item: RawFavourite): FavouritePoem | null {
     title: item.title ?? "Untitled",
     author: item.author ?? "Unknown Author",
     dateFeatured: item.date_featured ?? item.dateFeatured ?? "",
+    poemText: item.poem_text ?? item.poemText,
   };
 }
 
@@ -86,7 +112,7 @@ export async function fetchFavourites(): Promise<FavouritePoem[]> {
   const response = await fetch(endpoint, {
     headers: {
       Accept: "application/json",
-      ...authHeaders(),
+      ...(await authHeaders()),
     },
   });
 
@@ -117,12 +143,26 @@ export async function createFavourite(poemId: string): Promise<void> {
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
-      ...authHeaders(),
+      ...(await authHeaders()),
     },
     body: JSON.stringify({ poem_id: poemId }),
   });
 
   if (!response.ok) {
     throw new Error(`create favourite endpoint returned ${response.status}`);
+  }
+}
+
+export async function deleteFavourite(poemId: string): Promise<void> {
+  const endpoint = `${API_BASE_URL}/v1/me/favourites/${encodeURIComponent(poemId)}`;
+  const response = await fetch(endpoint, {
+    method: "DELETE",
+    headers: {
+      ...(await authHeaders()),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`delete favourite endpoint returned ${response.status}`);
   }
 }

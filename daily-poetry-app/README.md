@@ -27,11 +27,13 @@ You can also set a token at runtime in browser local storage under key:
 ## Implemented v1 Slice
 
 - `Today` view with title, poem body, author card, and favourite toggle.
-- `Favourites` view with local persistence.
+- `Favourites` view with expandable full poem text.
 - Auth-ready favourites integration:
+  - `POST /v1/auth/anonymous` bootstrap when token is missing.
   - `GET /v1/me/favourites`
   - `POST /v1/me/favourites` with `{ poem_id }`
-  - Explicit loading/error states with local fallback when auth is missing.
+  - `DELETE /v1/me/favourites/{poem_id}`
+  - Explicit loading/error states with remote-first sync behavior.
 - Offline-first daily poem behavior:
   - API fetch from `/v1/daily`.
   - Fallback to cached daily poem in local storage.

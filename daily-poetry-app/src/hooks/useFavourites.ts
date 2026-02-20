@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AuthNotConfiguredError, createFavourite, fetchFavourites } from "../lib/api";
+import { createFavourite, deleteFavourite, fetchFavourites } from "../lib/api";
 import { STORAGE_KEYS } from "../lib/constants";
 import { readJson, writeJson } from "../lib/storage";
 import type { DailyPoemResponse, FavouritePoem, FavouritesSource } from "../types/poetry";
@@ -10,6 +10,7 @@ function toFavourite(daily: DailyPoemResponse): FavouritePoem {
     title: daily.poem.title,
     author: daily.author.name,
     dateFeatured: daily.date,
+    poemText: daily.poem.text,
   };
 }
 
@@ -38,12 +39,7 @@ export function useFavourites() {
         const local = readJson<FavouritePoem[]>(STORAGE_KEYS.favourites) ?? [];
         setFavourites(local);
         setSource("local");
-
-        if (loadError instanceof AuthNotConfiguredError) {
-          setError("Auth token not configured; using local favourites.");
-        } else {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load favourites");
-        }
+        setError(loadError instanceof Error ? loadError.message : "Failed to load favourites");
       } finally {
         setLoading(false);
       }
@@ -59,18 +55,17 @@ export function useFavourites() {
     setError(null);
     setSyncing(true);
 
-    if (!exists) {
-      try {
+    try {
+      if (exists) {
+        await deleteFavourite(favourite.poemId);
+      } else {
         await createFavourite(favourite.poemId);
-        setSource("remote");
-      } catch (syncError) {
-        if (syncError instanceof AuthNotConfiguredError) {
-          setSource("local");
-          setError("Auth token not configured; saved favourite locally only.");
-        } else {
-          setError(syncError instanceof Error ? syncError.message : "Failed to create favourite");
-        }
       }
+      setSource("remote");
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "Failed to sync favourite");
+      setSyncing(false);
+      return;
     }
 
     setFavourites((current) => {

@@ -4,9 +4,11 @@ Backend MVP for Daily Poetry.
 
 ## Endpoints
 
+- `POST /v1/auth/anonymous`
 - `GET /v1/daily`
 - `GET /v1/me/favourites` (Bearer token required)
 - `POST /v1/me/favourites` (Bearer token required)
+- `DELETE /v1/me/favourites/{poem_id}` (Bearer token required)
 
 ## Database
 

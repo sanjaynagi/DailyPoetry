@@ -43,6 +43,12 @@ def test_api_endpoints() -> None:
         poem_id = poem.id
 
     with TestClient(app) as client:
+        auth_response = client.post("/v1/auth/anonymous")
+        assert auth_response.status_code == 200
+        auth_payload = auth_response.json()
+        assert "token" in auth_payload
+        token_headers = {"Authorization": f"Bearer {auth_payload['token']}"}
+
         daily_response = client.get("/v1/daily")
         assert daily_response.status_code == 200
         daily_payload = daily_response.json()
@@ -53,7 +59,6 @@ def test_api_endpoints() -> None:
         unauthorized = client.get("/v1/me/favourites")
         assert unauthorized.status_code == 401
 
-        token_headers = {"Authorization": "Bearer test-token"}
         favourites_empty = client.get("/v1/me/favourites", headers=token_headers)
         assert favourites_empty.status_code == 200
         assert favourites_empty.json() == {"favourites": []}
@@ -66,6 +71,14 @@ def test_api_endpoints() -> None:
         payload = favourites_after.json()
         assert len(payload["favourites"]) == 1
         assert payload["favourites"][0]["poem_id"] == poem_id
+        assert payload["favourites"][0]["poem_text"] == "I met a traveller from an antique land"
+
+        delete_response = client.delete(f"/v1/me/favourites/{poem_id}", headers=token_headers)
+        assert delete_response.status_code == 204
+
+        favourites_after_delete = client.get("/v1/me/favourites", headers=token_headers)
+        assert favourites_after_delete.status_code == 200
+        assert favourites_after_delete.json() == {"favourites": []}
 
     if db_path.exists():
         db_path.unlink()

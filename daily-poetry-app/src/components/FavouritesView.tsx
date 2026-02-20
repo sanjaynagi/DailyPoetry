@@ -21,10 +21,15 @@ export function FavouritesView({ favourites, loading, error, source }: Favourite
         <ul className="favourites-list">
           {favourites.map((item) => (
             <li className="favourite-row" key={item.poemId}>
-              <p className="favourite-title">{item.title}</p>
-              <p className="favourite-meta">
-                {item.author} · {item.dateFeatured}
-              </p>
+              <details>
+                <summary className="favourite-summary">
+                  <p className="favourite-title">{item.title}</p>
+                  <p className="favourite-meta">
+                    {item.author} · {item.dateFeatured}
+                  </p>
+                </summary>
+                {item.poemText ? <pre className="favourite-poem-text">{item.poemText}</pre> : null}
+              </details>
             </li>
           ))}
         </ul>

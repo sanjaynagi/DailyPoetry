@@ -19,6 +19,7 @@ export type FavouritePoem = {
   title: string;
   author: string;
   dateFeatured: string;
+  poemText?: string;
 };
 
 export type FavouritesSource = "remote" | "local";

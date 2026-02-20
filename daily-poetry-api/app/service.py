@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -26,6 +27,15 @@ def get_or_create_user_by_token(db: Session, token: str) -> models.User:
     db.commit()
     db.refresh(user)
     return user
+
+
+def issue_anonymous_token(db: Session) -> tuple[models.User, str]:
+    token = secrets.token_urlsafe(32)
+    user = models.User(id=str(uuid4()), auth_token=token, created_at=datetime.now(timezone.utc).replace(tzinfo=None))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user, token
 
 
 def fetch_daily_payload(db: Session) -> dict:
@@ -89,6 +99,7 @@ def fetch_user_favourites(db: Session, user: models.User) -> list[dict]:
                     if date_featured is not None and hasattr(date_featured, "isoformat")
                     else (str(date_featured) if date_featured is not None else None)
                 ),
+                "poem_text": poem.text,
             }
         )
     return favourites
@@ -112,4 +123,15 @@ def create_favourite(db: Session, user: models.User, poem_id: str) -> None:
         created_at=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     db.add(favourite)
+    db.commit()
+
+
+def delete_favourite(db: Session, user: models.User, poem_id: str) -> None:
+    existing = db.execute(
+        select(models.Favourite).where(models.Favourite.user_id == user.id, models.Favourite.poem_id == poem_id)
+    ).scalar_one_or_none()
+    if existing is None:
+        return
+
+    db.delete(existing)
     db.commit()

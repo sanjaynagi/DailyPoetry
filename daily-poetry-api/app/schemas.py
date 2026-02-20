@@ -30,6 +30,7 @@ class FavouriteItem(BaseModel):
     title: str
     author: str
     date_featured: str | None
+    poem_text: str | None
 
 
 class FavouritesResponse(BaseModel):
@@ -38,3 +39,8 @@ class FavouritesResponse(BaseModel):
 
 class CreateFavouriteRequest(BaseModel):
     poem_id: str
+
+
+class AnonymousAuthResponse(BaseModel):
+    user_id: str
+    token: str
