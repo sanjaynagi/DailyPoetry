@@ -172,8 +172,8 @@ body::after {
 
 .app-theme-toggle {
   position: fixed;
-  top: calc(1rem + env(safe-area-inset-top));
-  right: max(1rem, env(safe-area-inset-right));
+  top: calc(1.4rem + env(safe-area-inset-top));
+  right: max(1.4rem, calc(env(safe-area-inset-right) + 0.4rem));
   z-index: 30;
 }
 
