@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">DailyPoetry Widget</string>
+    <string name="widget_label">Today's Poem</string>
+    <string name="widget_empty_title">Today's poem unavailable</string>
+    <string name="widget_empty_subtitle">Tap refresh to try again</string>
+    <string name="widget_empty_body">No cached poem found yet.</string>
+    <string name="widget_refresh_content_description">Refresh poem</string>
+</resources>

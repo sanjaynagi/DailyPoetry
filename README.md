@@ -3,14 +3,15 @@
 DailyPoetry is a full-stack app that serves one poem per UTC day, supports anonymous users, and persists favourites to a backend database.
 
 This monorepo contains:
-- `daily-poetry-ingest/`: PoetryDB ingestion + author enrichment pipeline (Python 3.11+).
+- `daily-poetry-ingest/`: PoetryDB + Project Gutenberg ingestion pipelines with author enrichment (Python 3.11+).
 - `daily-poetry-api/`: FastAPI backend (`/v1/daily`, auth issuance, favourites APIs).
 - `daily-poetry-app/`: Vite + React + TypeScript PWA frontend.
+- `daily-poetry-android/`: Native Android widget companion app (Kotlin, AppWidgetProvider).
 - `artifacts/ingestion/`: generated JSONL/report artifacts used for DB seeding.
 
 ## Current Architecture
 
-- Data source: PoetryDB via ingestion pipeline.
+- Data sources: PoetryDB and Project Gutenberg via ingestion pipeline.
 - Artifacts: `poems.jsonl`, `authors.jsonl`, `duplicates.jsonl`, `report.json`.
 - Database schema: `authors`, `poems`, `daily_selection`, `users`, `favourites`.
 - Daily selection: resolved from `daily_selection.date` using UTC date.
@@ -64,6 +65,10 @@ Environment:
 - `GET /v1/me/favourites` (Bearer token)
 - `POST /v1/me/favourites` (Bearer token)
 - `DELETE /v1/me/favourites/{poem_id}` (Bearer token)
+- `GET /v1/me/notifications/preferences` (Bearer token)
+- `PUT /v1/me/notifications/preferences` (Bearer token)
+- `POST /v1/me/notifications/subscriptions` (Bearer token)
+- `DELETE /v1/me/notifications/subscriptions` (Bearer token)
 
 ## Production Deployment
 
@@ -79,7 +84,13 @@ Deployment/setup steps are documented in `instructions.md`.
 Ingestion:
 ```bash
 cd daily-poetry-ingest
-PYTHONPATH=src python -m daily_poetry_ingest.cli --output-dir ../artifacts/ingestion
+PYTHONPATH=src python -m daily_poetry_ingest.cli --source poetrydb --output-dir ../artifacts/ingestion
+```
+
+Gutenberg ingestion (strict extraction):
+```bash
+cd daily-poetry-ingest
+PYTHONPATH=src python -m daily_poetry_ingest.cli --source gutenberg --gutenberg-catalog-csv /path/to/pg_catalog.csv --gutenberg-texts-dir /path/to/gutenberg-texts --output-dir ../artifacts/ingestion
 ```
 
 Seed database from artifacts:
@@ -104,4 +115,24 @@ Frontend build:
 ```bash
 cd daily-poetry-app
 npm run build
+```
+
+Android widget app (open in Android Studio):
+```bash
+cd daily-poetry-android
+```
+
+## Pre-commit Hooks
+
+Install and enable repository hooks:
+
+```bash
+python -m pip install pre-commit
+pre-commit install
+```
+
+Run all hooks manually:
+
+```bash
+pre-commit run --all-files
 ```

@@ -38,19 +38,6 @@ export function TodayView({
       </div>
       <section className="panel">
         <p className="date-label">{formattedDate}</p>
-        <div className="notification-row">
-          <span className="notification-label">Daily reminders</span>
-          <button
-            className={notificationsEnabled ? "notification-toggle notification-toggle-active" : "notification-toggle"}
-            type="button"
-            onClick={onToggleNotifications}
-            disabled={!notificationsSupported || notificationsLoading || notificationsSyncing}
-          >
-            {notificationsSyncing ? "..." : notificationsEnabled ? "On" : "Off"}
-          </button>
-        </div>
-        {!notificationsSupported ? <p className="notification-note">Notifications are not supported here.</p> : null}
-        {notificationsError ? <p className="status status-error">{notificationsError}</p> : null}
 
         <div className="poem-card-wrap">
           <article className="poem-card">
@@ -75,6 +62,22 @@ export function TodayView({
             )}
           </button>
         </div>
+
+        <section className="notification-panel" aria-label="Daily reminders">
+          <div className="notification-row">
+            <span className="notification-label">Daily reminders</span>
+            <button
+              className={notificationsEnabled ? "notification-toggle notification-toggle-active" : "notification-toggle"}
+              type="button"
+              onClick={onToggleNotifications}
+              disabled={!notificationsSupported || notificationsLoading || notificationsSyncing}
+            >
+              {notificationsSyncing ? "..." : notificationsEnabled ? "On" : "Off"}
+            </button>
+          </div>
+          {!notificationsSupported ? <p className="notification-note">Notifications are not supported here.</p> : null}
+          {notificationsError ? <p className="status status-error">{notificationsError}</p> : null}
+        </section>
 
         <footer className="author-panel">
           <div className="author-block">
