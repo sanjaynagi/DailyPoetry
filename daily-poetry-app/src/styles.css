@@ -402,15 +402,15 @@ body::after {
   bottom: 0;
   transform: translateY(50%);
   border: 0;
-  border-radius: 0;
-  background: transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--poem-card-bg) 64%, var(--panel-bg) 36%);
   color: var(--heart-text);
   cursor: pointer;
   width: 3.05rem;
   height: 3.05rem;
   display: grid;
   place-items: center;
-  box-shadow: none;
+  box-shadow: 0 8px 18px rgba(20, 17, 14, 0.12);
 }
 
 .heart-button:hover:enabled {
