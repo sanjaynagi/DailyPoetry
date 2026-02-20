@@ -29,7 +29,11 @@ def test_api_endpoints() -> None:
     today = datetime.now(timezone.utc).date()
 
     with SessionLocal() as session:
-        author = Author(id=str(uuid4()), name="Percy Bysshe Shelley", bio_short="Romantic poet", image_url=None)
+        session.query(DailySelection).filter(DailySelection.date == today).delete()
+        session.commit()
+
+        author_name = f"Percy Bysshe Shelley {uuid4()}"
+        author = Author(id=str(uuid4()), name=author_name, bio_short="Romantic poet", image_url=None)
         poem = Poem(
             id=str(uuid4()),
             title="Ozymandias",
@@ -54,7 +58,7 @@ def test_api_endpoints() -> None:
         daily_payload = daily_response.json()
         assert daily_payload["date"] == today.isoformat()
         assert daily_payload["poem"]["id"] == poem_id
-        assert daily_payload["author"]["name"] == "Percy Bysshe Shelley"
+        assert daily_payload["author"]["name"] == author_name
 
         unauthorized = client.get("/v1/me/favourites")
         assert unauthorized.status_code == 401
@@ -79,6 +83,37 @@ def test_api_endpoints() -> None:
         favourites_after_delete = client.get("/v1/me/favourites", headers=token_headers)
         assert favourites_after_delete.status_code == 200
         assert favourites_after_delete.json() == {"favourites": []}
+
+        pref_initial = client.get("/v1/me/notifications/preferences", headers=token_headers)
+        assert pref_initial.status_code == 200
+        assert pref_initial.json() == {"enabled": False, "time_zone": "UTC", "local_hour": 9}
+
+        pref_update = client.put(
+            "/v1/me/notifications/preferences",
+            headers=token_headers,
+            json={"enabled": True, "time_zone": "UTC", "local_hour": 8},
+        )
+        assert pref_update.status_code == 200
+        assert pref_update.json() == {"enabled": True, "time_zone": "UTC", "local_hour": 8}
+
+        sub_create = client.post(
+            "/v1/me/notifications/subscriptions",
+            headers=token_headers,
+            json={
+                "endpoint": "https://example.test/sub",
+                "keys": {"p256dh": "abc", "auth": "xyz"},
+            },
+        )
+        assert sub_create.status_code == 201
+        assert "subscription_id" in sub_create.json()
+
+        sub_delete = client.request(
+            "DELETE",
+            "/v1/me/notifications/subscriptions",
+            headers=token_headers,
+            json={"endpoint": "https://example.test/sub"},
+        )
+        assert sub_delete.status_code == 204
 
     if db_path.exists():
         db_path.unlink()

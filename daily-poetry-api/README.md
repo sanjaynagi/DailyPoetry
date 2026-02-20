@@ -9,6 +9,10 @@ Backend MVP for Daily Poetry.
 - `GET /v1/me/favourites` (Bearer token required)
 - `POST /v1/me/favourites` (Bearer token required)
 - `DELETE /v1/me/favourites/{poem_id}` (Bearer token required)
+- `GET /v1/me/notifications/preferences` (Bearer token required)
+- `PUT /v1/me/notifications/preferences` (Bearer token required)
+- `POST /v1/me/notifications/subscriptions` (Bearer token required)
+- `DELETE /v1/me/notifications/subscriptions` (Bearer token required)
 
 ## Database
 
@@ -30,6 +34,11 @@ Migrations also run on app startup.
 ```bash
 uvicorn app.main:app --reload
 ```
+
+Notification env vars:
+- `DAILY_POETRY_VAPID_PUBLIC_KEY`
+- `DAILY_POETRY_VAPID_PRIVATE_KEY`
+- `DAILY_POETRY_VAPID_SUBJECT` (default `mailto:ops@example.com`)
 
 ## Seed From Ingestion Artifacts
 
@@ -73,4 +82,11 @@ python -m app.editorial_cli approve --poem-id <POEM_ID>
 python -m app.editorial_cli reject --poem-id <POEM_ID>
 python -m app.editorial_cli stats
 python -m app.editorial_cli auto-reject-long --max-lines 50 --status pending
+```
+
+Send due web push reminders:
+
+```bash
+python -m app.notifications_cli --dry-run
+python -m app.notifications_cli
 ```

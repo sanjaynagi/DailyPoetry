@@ -12,14 +12,28 @@ from app.auth import require_bearer_token
 from app.config import get_cors_origins
 from app.database import engine, get_db
 from app.migrate import run_sql_migrations
-from app.schemas import AnonymousAuthResponse, CreateFavouriteRequest, DailyResponse, FavouritesResponse
+from app.schemas import (
+    AnonymousAuthResponse,
+    CreateFavouriteRequest,
+    DailyResponse,
+    FavouritesResponse,
+    NotificationPreferencePayload,
+    NotificationPreferenceRequest,
+    NotificationSubscriptionResponse,
+    PushSubscriptionDeleteRequest,
+    PushSubscriptionRequest,
+)
 from app.service import (
     create_favourite,
+    delete_push_subscription,
     delete_favourite,
     fetch_daily_payload,
     fetch_user_favourites,
     get_or_create_user_by_token,
+    get_notification_preference,
     issue_anonymous_token,
+    upsert_notification_preference,
+    upsert_push_subscription,
 )
 
 
@@ -84,3 +98,55 @@ def delete_my_favourite(
 ) -> None:
     user = get_or_create_user_by_token(db, token)
     delete_favourite(db, user, poem_id)
+
+
+@app.get("/v1/me/notifications/preferences", response_model=NotificationPreferencePayload)
+def get_my_notification_preferences(
+    token: str = Depends(require_bearer_token),
+    db: Session = Depends(get_db),
+) -> dict:
+    user = get_or_create_user_by_token(db, token)
+    return get_notification_preference(db, user)
+
+
+@app.put("/v1/me/notifications/preferences", response_model=NotificationPreferencePayload)
+def put_my_notification_preferences(
+    payload: NotificationPreferenceRequest,
+    token: str = Depends(require_bearer_token),
+    db: Session = Depends(get_db),
+) -> dict:
+    user = get_or_create_user_by_token(db, token)
+    return upsert_notification_preference(
+        db,
+        user,
+        enabled=payload.enabled,
+        time_zone=payload.time_zone,
+        local_hour=payload.local_hour,
+    )
+
+
+@app.post("/v1/me/notifications/subscriptions", response_model=NotificationSubscriptionResponse, status_code=201)
+def post_my_notification_subscription(
+    payload: PushSubscriptionRequest,
+    token: str = Depends(require_bearer_token),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    user = get_or_create_user_by_token(db, token)
+    subscription_id = upsert_push_subscription(
+        db,
+        user,
+        endpoint=payload.endpoint,
+        p256dh=payload.keys.p256dh,
+        auth=payload.keys.auth,
+    )
+    return {"subscription_id": subscription_id}
+
+
+@app.delete("/v1/me/notifications/subscriptions", status_code=204)
+def delete_my_notification_subscription(
+    payload: PushSubscriptionDeleteRequest,
+    token: str = Depends(require_bearer_token),
+    db: Session = Depends(get_db),
+) -> None:
+    user = get_or_create_user_by_token(db, token)
+    delete_push_subscription(db, user, endpoint=payload.endpoint)

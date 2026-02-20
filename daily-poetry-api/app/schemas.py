@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PoemPayload(BaseModel):
@@ -44,3 +44,33 @@ class CreateFavouriteRequest(BaseModel):
 class AnonymousAuthResponse(BaseModel):
     user_id: str
     token: str
+
+
+class NotificationPreferencePayload(BaseModel):
+    enabled: bool
+    time_zone: str
+    local_hour: int
+
+
+class NotificationPreferenceRequest(BaseModel):
+    enabled: bool
+    time_zone: str
+    local_hour: int = Field(ge=0, le=23)
+
+
+class PushSubscriptionKeysRequest(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscriptionRequest(BaseModel):
+    endpoint: str
+    keys: PushSubscriptionKeysRequest
+
+
+class PushSubscriptionDeleteRequest(BaseModel):
+    endpoint: str
+
+
+class NotificationSubscriptionResponse(BaseModel):
+    subscription_id: str
