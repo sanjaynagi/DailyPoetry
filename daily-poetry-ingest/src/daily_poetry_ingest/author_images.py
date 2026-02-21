@@ -1,7 +1,7 @@
 """Author image enrichment utilities.
 
-This module resolves image URLs for authors via Wikipedia APIs and produces
-nullable image metadata records for ingestion artifacts.
+This module resolves image and bio metadata for authors via Wikipedia APIs and
+produces nullable author metadata records for ingestion artifacts.
 """
 
 from __future__ import annotations
@@ -16,11 +16,14 @@ from typing import Any
 
 @dataclass(frozen=True, slots=True)
 class AuthorImageRecord:
-    """Represents image metadata for a single author."""
+    """Represents author metadata for a single author."""
 
     name: str
     image_url: str | None
     image_source: str | None
+    bio_short: str | None = None
+    bio_source: str | None = None
+    bio_url: str | None = None
 
 
 def _fetch_json(url: str, timeout_seconds: float) -> Any:
@@ -58,18 +61,39 @@ def _extract_thumbnail(page: dict) -> str | None:
     return None
 
 
+def _normalize_bio_text(raw_text: str, max_chars: int) -> str | None:
+    cleaned = " ".join(raw_text.split())
+    if not cleaned:
+        return None
+    if max_chars <= 0 or len(cleaned) <= max_chars:
+        return cleaned
+    truncated = cleaned[:max_chars].rstrip()
+    if " " in truncated:
+        truncated = truncated.rsplit(" ", 1)[0]
+    return truncated.rstrip(" ,;:.") + "..."
+
+
+def _build_wikipedia_page_url(title: str) -> str:
+    normalized = title.strip().replace(" ", "_")
+    return "https://en.wikipedia.org/wiki/" + urllib.parse.quote(normalized, safe="()'/_-")
+
+
 def resolve_author_image(
     author: str,
     timeout_seconds: float,
     retries: int,
     backoff_seconds: float,
+    *,
+    enrich_bio: bool = True,
+    bio_max_chars: int = 280,
 ) -> AuthorImageRecord:
-    """Resolve an author image URL from Wikipedia, returning nullable metadata."""
+    """Resolve author image and optional bio metadata from Wikipedia."""
 
     encoded = urllib.parse.quote(author, safe="")
     endpoint = (
         "https://en.wikipedia.org/w/api.php"
-        f"?action=query&prop=pageimages&format=json&piprop=thumbnail|original&pithumbsize=600&titles={encoded}"
+        "?action=query&prop=pageimages|extracts&format=json&redirects=1"
+        f"&piprop=thumbnail|original&pithumbsize=600&exintro=1&explaintext=1&titles={encoded}"
     )
 
     try:
@@ -86,10 +110,41 @@ def resolve_author_image(
         if not isinstance(page, dict):
             continue
         image_url = _extract_thumbnail(page)
-        if image_url:
-            return AuthorImageRecord(name=author, image_url=image_url, image_source="wikipedia")
+        image_source = "wikipedia" if image_url else None
 
-    return AuthorImageRecord(name=author, image_url=None, image_source=None)
+        bio_short: str | None = None
+        bio_source: str | None = None
+        bio_url: str | None = None
+        if enrich_bio:
+            extract = page.get("extract")
+            if isinstance(extract, str):
+                bio_short = _normalize_bio_text(extract, bio_max_chars)
+                if bio_short:
+                    bio_source = "wikipedia"
+                    title = page.get("title")
+                    if isinstance(title, str) and title.strip():
+                        bio_url = _build_wikipedia_page_url(title)
+                    else:
+                        bio_url = _build_wikipedia_page_url(author)
+
+        if image_url or bio_short:
+            return AuthorImageRecord(
+                name=author,
+                image_url=image_url,
+                image_source=image_source,
+                bio_short=bio_short,
+                bio_source=bio_source,
+                bio_url=bio_url,
+            )
+
+    return AuthorImageRecord(
+        name=author,
+        image_url=None,
+        image_source=None,
+        bio_short=None,
+        bio_source=None,
+        bio_url=None,
+    )
 
 
 def enrich_authors(
@@ -98,8 +153,11 @@ def enrich_authors(
     retries: int,
     backoff_seconds: float,
     rate_limit_rps: float,
+    *,
+    enrich_bios: bool = True,
+    bio_max_chars: int = 280,
 ) -> tuple[list[dict], list[dict]]:
-    """Enrich a sorted list of unique authors with nullable image metadata.
+    """Enrich a sorted list of unique authors with nullable metadata.
 
     Returns records and non-fatal errors.
     """
@@ -110,16 +168,35 @@ def enrich_authors(
 
     for author in authors:
         try:
-            record = resolve_author_image(author, timeout_seconds, retries, backoff_seconds)
+            record = resolve_author_image(
+                author,
+                timeout_seconds,
+                retries,
+                backoff_seconds,
+                enrich_bio=enrich_bios,
+                bio_max_chars=bio_max_chars,
+            )
             records.append(
                 {
                     "name": record.name,
                     "image_url": record.image_url,
                     "image_source": record.image_source,
+                    "bio_short": record.bio_short,
+                    "bio_source": record.bio_source,
+                    "bio_url": record.bio_url,
                 }
             )
         except Exception as exc:  # pragma: no cover - defensive catch
-            records.append({"name": author, "image_url": None, "image_source": None})
+            records.append(
+                {
+                    "name": author,
+                    "image_url": None,
+                    "image_source": None,
+                    "bio_short": None,
+                    "bio_source": None,
+                    "bio_url": None,
+                }
+            )
             errors.append({"kind": "author_image_error", "author": author, "reason": str(exc)})
 
         if delay > 0:

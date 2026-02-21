@@ -22,6 +22,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--backoff-seconds", type=float, default=0.5)
     parser.add_argument("--rate-limit-rps", type=float, default=2.0)
+    parser.add_argument(
+        "--enrich-author-bios",
+        dest="enrich_author_bios",
+        action="store_true",
+        default=True,
+        help="Enable author bio enrichment from upstream metadata.",
+    )
+    parser.add_argument(
+        "--no-enrich-author-bios",
+        dest="enrich_author_bios",
+        action="store_false",
+        help="Disable author bio enrichment and emit null bio fields.",
+    )
+    parser.add_argument(
+        "--author-bio-max-chars",
+        type=int,
+        default=280,
+        help="Maximum length for enriched author bios. <=0 keeps full text.",
+    )
     parser.add_argument("--fetch-workers", type=int, default=None)
     parser.add_argument("--normalize-workers", type=int, default=None)
     parser.add_argument("--gutenberg-catalog-csv", type=Path, default=None)
@@ -51,6 +70,8 @@ def main() -> None:
             retries=args.retries,
             backoff_seconds=args.backoff_seconds,
             rate_limit_rps=args.rate_limit_rps,
+            enrich_author_bios=args.enrich_author_bios,
+            author_bio_max_chars=args.author_bio_max_chars,
         )
     else:
         if args.gutenberg_catalog_csv is None:
@@ -66,6 +87,8 @@ def main() -> None:
             retries=args.retries,
             backoff_seconds=args.backoff_seconds,
             rate_limit_rps=args.rate_limit_rps,
+            enrich_author_bios=args.enrich_author_bios,
+            author_bio_max_chars=args.author_bio_max_chars,
         )
     print_report(report)
 

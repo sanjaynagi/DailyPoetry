@@ -87,6 +87,12 @@ cd daily-poetry-ingest
 PYTHONPATH=src python -m daily_poetry_ingest.cli --source poetrydb --output-dir ../artifacts/ingestion
 ```
 
+Disable author bio enrichment:
+```bash
+cd daily-poetry-ingest
+PYTHONPATH=src python -m daily_poetry_ingest.cli --source poetrydb --no-enrich-author-bios --output-dir ../artifacts/ingestion
+```
+
 Gutenberg ingestion (strict extraction):
 ```bash
 cd daily-poetry-ingest

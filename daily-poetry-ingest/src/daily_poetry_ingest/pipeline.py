@@ -140,6 +140,14 @@ def _build_report(
         "source": source,
         "authors_enriched": len(author_records),
         "authors_without_images": sum(1 for record in author_records if record["image_url"] is None),
+        "authors_with_bios": sum(
+            1 for record in author_records if isinstance(record.get("bio_short"), str) and record["bio_short"].strip()
+        ),
+        "authors_without_bios": sum(
+            1
+            for record in author_records
+            if not (isinstance(record.get("bio_short"), str) and record["bio_short"].strip())
+        ),
         "canonical_poems": len(canonical),
         "duplicates": len(duplicates),
         "errors": errors,
@@ -169,6 +177,8 @@ def run_poetrydb_ingestion(
     retries: int = 3,
     backoff_seconds: float = 0.5,
     rate_limit_rps: float = 2.0,
+    enrich_author_bios: bool = True,
+    author_bio_max_chars: int = 280,
 ) -> dict:
     """Run ingestion end-to-end and write artifacts into output_dir."""
 
@@ -240,6 +250,8 @@ def run_poetrydb_ingestion(
         retries=retries,
         backoff_seconds=backoff_seconds,
         rate_limit_rps=rate_limit_rps,
+        enrich_bios=enrich_author_bios,
+        bio_max_chars=author_bio_max_chars,
     )
     errors.extend(author_errors)
 
@@ -268,6 +280,8 @@ def run_gutenberg_ingestion(
     retries: int = 3,
     backoff_seconds: float = 0.5,
     rate_limit_rps: float = 2.0,
+    enrich_author_bios: bool = True,
+    author_bio_max_chars: int = 280,
 ) -> dict:
     """Run strict Project Gutenberg ingestion and write standard artifacts."""
 
@@ -283,6 +297,8 @@ def run_gutenberg_ingestion(
         retries=retries,
         backoff_seconds=backoff_seconds,
         rate_limit_rps=rate_limit_rps,
+        enrich_bios=enrich_author_bios,
+        bio_max_chars=author_bio_max_chars,
     )
     errors = metadata_errors + extract_errors + author_errors
 
@@ -312,6 +328,8 @@ def run_ingestion(
     retries: int = 3,
     backoff_seconds: float = 0.5,
     rate_limit_rps: float = 2.0,
+    enrich_author_bios: bool = True,
+    author_bio_max_chars: int = 280,
 ) -> dict:
     """Backward-compatible alias for PoetryDB ingestion."""
 
@@ -324,6 +342,8 @@ def run_ingestion(
         retries=retries,
         backoff_seconds=backoff_seconds,
         rate_limit_rps=rate_limit_rps,
+        enrich_author_bios=enrich_author_bios,
+        author_bio_max_chars=author_bio_max_chars,
     )
 
 
@@ -347,6 +367,8 @@ def print_report(report: dict) -> None:
         "catalog_candidates",
         "authors_enriched",
         "authors_without_images",
+        "authors_with_bios",
+        "authors_without_bios",
         "normalized_poems",
         "canonical_poems",
         "duplicates",

@@ -46,7 +46,17 @@ def _upsert_authors(db: Session, author_rows: list[dict], poem_rows: list[dict])
     for row in poem_rows:
         name = row.get("author")
         if isinstance(name, str) and name.strip():
-            by_name.setdefault(name.strip(), {"name": name.strip(), "image_url": None, "image_source": None})
+            by_name.setdefault(
+                name.strip(),
+                {
+                    "name": name.strip(),
+                    "image_url": None,
+                    "image_source": None,
+                    "bio_short": None,
+                    "bio_source": None,
+                    "bio_url": None,
+                },
+            )
 
     for row in author_rows:
         name = row.get("name")
@@ -55,6 +65,9 @@ def _upsert_authors(db: Session, author_rows: list[dict], poem_rows: list[dict])
                 "name": name.strip(),
                 "image_url": row.get("image_url") if isinstance(row.get("image_url"), str) else None,
                 "image_source": row.get("image_source") if isinstance(row.get("image_source"), str) else None,
+                "bio_short": row.get("bio_short") if isinstance(row.get("bio_short"), str) else None,
+                "bio_source": row.get("bio_source") if isinstance(row.get("bio_source"), str) else None,
+                "bio_url": row.get("bio_url") if isinstance(row.get("bio_url"), str) else None,
             }
 
     id_map: dict[str, str] = {}
@@ -70,13 +83,14 @@ def _upsert_authors(db: Session, author_rows: list[dict], poem_rows: list[dict])
                 Author(
                     id=author_id,
                     name=name,
-                    bio_short="",
+                    bio_short=payload["bio_short"],
                     image_url=payload["image_url"],
                 )
             )
             id_map[name] = author_id
         else:
             model.name = name
+            model.bio_short = payload["bio_short"]
             model.image_url = payload["image_url"]
             id_map[name] = model.id
 
