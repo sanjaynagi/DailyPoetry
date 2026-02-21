@@ -1,6 +1,6 @@
-# DailyPoetry
+# daily-poetry
 
-DailyPoetry is a full-stack app that serves one poem per UTC day, supports anonymous users, and persists favourites to a backend database.
+daily-poetry is a full-stack app that serves one poem per UTC day, supports anonymous users, and persists favourites to a backend database.
 
 This monorepo contains:
 - `daily-poetry-ingest/`: PoetryDB + Project Gutenberg ingestion pipelines with author enrichment (Python 3.11+).

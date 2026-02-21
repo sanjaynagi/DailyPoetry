@@ -1,6 +1,6 @@
 {
-  "name": "DailyPoetry",
-  "short_name": "DailyPoetry",
+  "name": "daily-poetry",
+  "short_name": "daily-poetry",
   "id": "/",
   "start_url": "/",
   "scope": "/",

@@ -387,6 +387,10 @@ body::after {
   font-family: inherit;
   background: transparent;
   text-wrap: pretty;
+  max-height: min(48vh, 26rem);
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  scrollbar-width: thin;
 }
 
 .author-panel {

@@ -73,6 +73,70 @@ Another very long paragraph continues the prose shape.
         self.assertEqual(poems[0].author, "Walt Whitman")
         self.assertTrue(poems[0].source.startswith("gutenberg:"))
 
+    def test_ingest_gutenberg_candidates_supports_nested_epub_cache_layout(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            cache_root = Path(tmp_dir) / "cache" / "epub" / "10"
+            cache_root.mkdir(parents=True)
+            (cache_root / "pg10.txt").write_text(_VALID_POEM_TEXT, encoding="utf-8")
+
+            candidates, _ = load_catalog_candidates(
+                _write_catalog(
+                    Path(tmp_dir) / "catalog.csv",
+                    rows=[
+                        "10,Text,O Captain! My Captain!,en,Walt Whitman,Poetry,Poetry,PS",
+                    ],
+                ),
+                language="en",
+            )
+            poems, errors = ingest_gutenberg_candidates(candidates, texts_dir=Path(tmp_dir) / "cache")
+
+        self.assertEqual(errors, [])
+        self.assertEqual(len(poems), 1)
+        self.assertEqual(poems[0].linecount, 9)
+
+    def test_ingest_gutenberg_candidates_applies_max_non_empty_line_filter(self) -> None:
+        body_lines = [f"Soft winds carry bright dawn over quiet fields tonight {idx}." for idx in range(1, 22)]
+        body_lines.append("")
+        body_lines.extend(f"Soft winds carry bright dawn over quiet fields tonight {idx}." for idx in range(22, 42))
+        long_poem = """*** START OF THE PROJECT GUTENBERG EBOOK 10 ***
+O Captain! My Captain!
+by Walt Whitman
+
+{body}
+*** END OF THE PROJECT GUTENBERG EBOOK 10 ***"""
+        long_poem = long_poem.format(body="\n".join(body_lines))
+
+        with TemporaryDirectory() as tmp_dir:
+            texts_dir = Path(tmp_dir) / "texts"
+            texts_dir.mkdir(parents=True)
+            (texts_dir / "10.txt").write_text(long_poem, encoding="utf-8")
+
+            candidates, _ = load_catalog_candidates(
+                _write_catalog(
+                    Path(tmp_dir) / "catalog.csv",
+                    rows=[
+                        "10,Text,O Captain! My Captain!,en,Walt Whitman,Poetry,Poetry,PS",
+                    ],
+                ),
+                language="en",
+            )
+            poems_relaxed, errors_relaxed = ingest_gutenberg_candidates(
+                candidates,
+                texts_dir=texts_dir,
+                max_non_empty_lines=120,
+            )
+            poems_strict, errors_strict = ingest_gutenberg_candidates(
+                candidates,
+                texts_dir=texts_dir,
+                max_non_empty_lines=40,
+            )
+
+        self.assertEqual(len(poems_relaxed), 1)
+        self.assertEqual(errors_relaxed, [])
+        self.assertEqual(poems_strict, [])
+        self.assertEqual(len(errors_strict), 1)
+        self.assertEqual(errors_strict[0]["kind"], "extract_error")
+
 
 def _write_catalog(path: Path, *, rows: list[str]) -> Path:
     path.write_text(

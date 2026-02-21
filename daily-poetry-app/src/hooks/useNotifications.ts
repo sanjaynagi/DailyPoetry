@@ -54,7 +54,7 @@ function defaultPreference(): NotificationPreference {
 
 function toNotificationErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof TypeError && error.message === "Failed to fetch") {
-    return `Could not reach the DailyPoetry API (${API_BASE_URL}). Check connection and API configuration.`;
+    return `Could not reach the daily-poetry API (${API_BASE_URL}). Check connection and API configuration.`;
   }
   return error instanceof Error ? error.message : fallback;
 }

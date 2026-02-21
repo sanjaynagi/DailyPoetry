@@ -169,7 +169,7 @@ def run_interactive(db: Session, *, status: str = "pending") -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Editorial moderation CLI for DailyPoetry")
+    parser = argparse.ArgumentParser(description="Editorial moderation CLI for daily-poetry")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     list_parser = subparsers.add_parser("list", help="List poems by editorial status")

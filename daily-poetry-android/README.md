@@ -1,6 +1,6 @@
-# DailyPoetry Android Widget
+# daily-poetry Android Widget
 
-Native Android companion app that exposes a Pixel-compatible home-screen widget for DailyPoetry.
+Native Android companion app that exposes a Pixel-compatible home-screen widget for daily-poetry.
 
 ## What it does
 
@@ -28,12 +28,12 @@ For a local API, change `DAILY_POETRY_API_BASE_URL` to your machine-accessible e
 1. Open `daily-poetry-android/` in Android Studio (Jellyfish+).
 2. Let Android Studio sync Gradle.
 3. Run the `app` target on a Pixel device/emulator (API 26+).
-4. Long press home screen -> `Widgets` -> `DailyPoetry Widget` -> `Today's Poem`.
+4. Long press home screen -> `Widgets` -> `daily-poetry Widget` -> `Today's Poem`.
 
 ## Verify behavior
 
 1. Widget shows title/author/date/body from `/v1/daily`.
-2. Tap widget body opens DailyPoetry web app.
+2. Tap widget body opens daily-poetry web app.
 3. Tap refresh icon forces immediate update.
 4. Disable network and confirm last cached poem remains visible.
 

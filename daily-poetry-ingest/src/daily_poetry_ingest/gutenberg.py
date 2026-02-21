@@ -119,8 +119,16 @@ def load_catalog_candidates(catalog_path: Path, *, language: str = "en") -> tupl
 
 
 def _read_gutenberg_text(texts_dir: Path, ebook_id: int) -> str:
-    for name in (f"{ebook_id}.txt", f"pg{ebook_id}.txt", f"{ebook_id}-0.txt"):
-        path = texts_dir / name
+    """Load Gutenberg text from known cache layouts."""
+
+    flat_names = (f"{ebook_id}.txt", f"pg{ebook_id}.txt", f"{ebook_id}-0.txt")
+    nested_names = (f"pg{ebook_id}.txt", f"{ebook_id}.txt", f"{ebook_id}-0.txt")
+
+    candidate_paths = [texts_dir / name for name in flat_names]
+    candidate_paths.extend(texts_dir / str(ebook_id) / name for name in nested_names)
+    candidate_paths.extend(texts_dir / "epub" / str(ebook_id) / name for name in nested_names)
+
+    for path in candidate_paths:
         if path.exists():
             return path.read_text(encoding="utf-8", errors="replace")
     raise FileNotFoundError(f"No text file found for ebook_id={ebook_id}")
@@ -187,9 +195,9 @@ def _trim_tail_sections(lines: list[str]) -> list[str]:
     return lines
 
 
-def _is_strict_poem_shape(lines: list[str]) -> bool:
+def _is_strict_poem_shape(lines: list[str], *, max_non_empty_lines: int = 120) -> bool:
     non_empty = [line for line in lines if line.strip()]
-    if len(non_empty) < 8 or len(non_empty) > 120:
+    if len(non_empty) < 8 or len(non_empty) > max_non_empty_lines:
         return False
 
     text_length = sum(len(line) for line in non_empty)
@@ -218,7 +226,13 @@ def _is_strict_poem_shape(lines: list[str]) -> bool:
     return True
 
 
-def extract_strict_poem_lines(raw_text: str, title: str, author: str) -> list[str] | None:
+def extract_strict_poem_lines(
+    raw_text: str,
+    title: str,
+    author: str,
+    *,
+    max_non_empty_lines: int = 120,
+) -> list[str] | None:
     """Return poem lines when text passes strict full-poem checks."""
 
     bounded = _slice_between_markers(raw_text).replace("\r\n", "\n").replace("\r", "\n")
@@ -231,15 +245,25 @@ def extract_strict_poem_lines(raw_text: str, title: str, author: str) -> list[st
     while lines and _WHITESPACE_LINE_RE.match(lines[-1]):
         lines.pop()
 
-    if not lines or not _is_strict_poem_shape(lines):
+    if not lines or not _is_strict_poem_shape(lines, max_non_empty_lines=max_non_empty_lines):
         return None
     return lines
 
 
-def normalize_gutenberg_candidate(candidate: GutenbergCandidate, raw_text: str) -> NormalizedPoem | NormalizationError:
+def normalize_gutenberg_candidate(
+    candidate: GutenbergCandidate,
+    raw_text: str,
+    *,
+    max_non_empty_lines: int = 120,
+) -> NormalizedPoem | NormalizationError:
     """Normalize a strict Gutenberg candidate into canonical poem format."""
 
-    poem_lines = extract_strict_poem_lines(raw_text, candidate.title, candidate.author)
+    poem_lines = extract_strict_poem_lines(
+        raw_text,
+        candidate.title,
+        candidate.author,
+        max_non_empty_lines=max_non_empty_lines,
+    )
     if poem_lines is None:
         return NormalizationError(
             reason="strict_extraction_failed",
@@ -259,6 +283,7 @@ def ingest_gutenberg_candidates(
     candidates: list[GutenbergCandidate],
     *,
     texts_dir: Path,
+    max_non_empty_lines: int = 120,
 ) -> tuple[list[NormalizedPoem], list[dict]]:
     """Load, strictly parse, and normalize Gutenberg candidates."""
 
@@ -272,7 +297,11 @@ def ingest_gutenberg_candidates(
             errors.append({"kind": "text_missing", "ebook_id": candidate.ebook_id, "reason": str(exc)})
             continue
 
-        normalized = normalize_gutenberg_candidate(candidate, raw_text)
+        normalized = normalize_gutenberg_candidate(
+            candidate,
+            raw_text,
+            max_non_empty_lines=max_non_empty_lines,
+        )
         if isinstance(normalized, NormalizationError):
             errors.append(
                 {

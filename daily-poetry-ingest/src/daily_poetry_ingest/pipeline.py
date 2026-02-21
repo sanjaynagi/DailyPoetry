@@ -19,6 +19,59 @@ from daily_poetry_ingest.gutenberg import ingest_gutenberg_candidates, load_cata
 from daily_poetry_ingest.normalize import NormalizationError, NormalizedPoem, normalize_record
 
 
+class _ProgressRenderer:
+    """Render lightweight progress bars to stderr."""
+
+    def __init__(self) -> None:
+        self._is_tty = sys.stderr.isatty()
+        self._last_emit = 0.0
+
+    @staticmethod
+    def _build_bar(current: int, total: int, width: int = 28) -> str:
+        if total <= 0:
+            return "[" + ("." * width) + "]"
+        ratio = max(0.0, min(1.0, current / total))
+        filled = int(round(ratio * width))
+        return "[" + ("#" * filled) + ("." * (width - filled)) + "]"
+
+    def render_gutenberg(self, *, processed: int, total: int, force: bool = False) -> None:
+        self._render_line(
+            message=f"gutenberg extract {self._build_bar(processed, total)} {processed}/{total}",
+            force=force,
+        )
+
+    def render_poetrydb(
+        self,
+        *,
+        fetch_done: int,
+        fetch_total: int,
+        normalized_done: int,
+        force: bool = False,
+    ) -> None:
+        fetch_bar = self._build_bar(fetch_done, fetch_total)
+        self._render_line(
+            message=(
+                f"poetrydb fetch {fetch_bar} {fetch_done}/{fetch_total} "
+                f"| normalized={normalized_done}"
+            ),
+            force=force,
+        )
+
+    def _render_line(self, *, message: str, force: bool) -> None:
+        now = time.monotonic()
+        if not force and (now - self._last_emit) < 0.15:
+            return
+        self._last_emit = now
+        if self._is_tty:
+            sys.stderr.write("\r" + message)
+        else:
+            sys.stderr.write(message + "\n")
+        sys.stderr.flush()
+        if force and self._is_tty:
+            sys.stderr.write("\n")
+            sys.stderr.flush()
+
+
 def _fetch_json(url: str, timeout_seconds: float) -> Any:
     request = urllib.request.Request(url, headers={"User-Agent": "daily-poetry-ingest/0.1"})
     with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
@@ -52,6 +105,7 @@ def _fetch_worker(
     author_queue: mp.Queue,
     raw_queue: mp.Queue,
     error_queue: mp.Queue,
+    fetch_progress_queue: mp.Queue,
     timeout_seconds: float,
     retries: int,
     backoff_seconds: float,
@@ -75,6 +129,8 @@ def _fetch_worker(
                 error_queue.put({"kind": "fetch_error", "author": author, "reason": "unexpected_payload"})
         except Exception as exc:  # pragma: no cover - network behavior varies
             error_queue.put({"kind": "fetch_error", "author": author, "reason": str(exc)})
+        finally:
+            fetch_progress_queue.put({"kind": "fetch_done"})
 
         if delay > 0:
             time.sleep(delay)
@@ -190,6 +246,7 @@ def run_poetrydb_ingestion(
     raw_queue: mp.Queue = mp.Queue()
     normalized_queue: mp.Queue = mp.Queue()
     error_queue: mp.Queue = mp.Queue()
+    fetch_progress_queue: mp.Queue = mp.Queue()
 
     for author in authors:
         author_queue.put(author)
@@ -204,6 +261,7 @@ def run_poetrydb_ingestion(
                 author_queue,
                 raw_queue,
                 error_queue,
+                fetch_progress_queue,
                 timeout_seconds,
                 retries,
                 backoff_seconds,
@@ -220,8 +278,25 @@ def run_poetrydb_ingestion(
     for process in fetch_processes + normalize_processes:
         process.start()
 
+    progress = _ProgressRenderer()
+    fetch_done = 0
+    normalized_done = 0
+    total_authors = len(authors)
+    errors: list[dict] = []
+
+    while fetch_done < total_authors:
+        for message in _drain_queue(fetch_progress_queue):
+            if message.get("kind") == "fetch_done":
+                fetch_done += 1
+        for error in _drain_queue(error_queue):
+            errors.append(error)
+        progress.render_poetrydb(fetch_done=fetch_done, fetch_total=total_authors, normalized_done=normalized_done)
+        time.sleep(0.02)
+
     for process in fetch_processes:
         process.join()
+
+    progress.render_poetrydb(fetch_done=fetch_done, fetch_total=total_authors, normalized_done=normalized_done)
 
     for _ in range(normalize_workers):
         raw_queue.put(None)
@@ -232,15 +307,21 @@ def run_poetrydb_ingestion(
         message = normalized_queue.get()
         if message.get("kind") == "normalize_worker_done":
             done_count += 1
-            continue
-        if message.get("kind") == "normalized":
+        elif message.get("kind") == "normalized":
             payload = message["payload"]
             normalized_payloads.append(NormalizedPoem(**payload))
+            normalized_done += 1
+
+        for error in _drain_queue(error_queue):
+            errors.append(error)
+            if error.get("kind") == "normalize_error":
+                normalized_done += 1
+        progress.render_poetrydb(fetch_done=fetch_done, fetch_total=total_authors, normalized_done=normalized_done)
 
     for process in normalize_processes:
         process.join()
-
-    errors = _drain_queue(error_queue)
+    errors.extend(_drain_queue(error_queue))
+    progress.render_poetrydb(fetch_done=fetch_done, fetch_total=total_authors, normalized_done=normalized_done, force=True)
 
     canonical, duplicates = dedupe_poems(normalized_payloads)
     unique_authors = sorted({record["author"] for record in canonical if isinstance(record.get("author"), str)})
@@ -276,6 +357,7 @@ def run_gutenberg_ingestion(
     catalog_csv: Path,
     texts_dir: Path,
     language: str = "en",
+    max_non_empty_lines: int = 120,
     timeout_seconds: float = 20.0,
     retries: int = 3,
     backoff_seconds: float = 0.5,
@@ -288,7 +370,28 @@ def run_gutenberg_ingestion(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     candidates, metadata_errors = load_catalog_candidates(catalog_csv, language=language)
-    normalized_payloads, extract_errors = ingest_gutenberg_candidates(candidates, texts_dir=texts_dir)
+    progress = _ProgressRenderer()
+    total_candidates = len(candidates)
+
+    if total_candidates == 0:
+        progress.render_gutenberg(processed=0, total=0, force=True)
+        normalized_payloads = []
+        extract_errors = []
+    else:
+        # Run per-candidate to provide progress without introducing third-party deps.
+        normalized_payloads = []
+        extract_errors = []
+        for index, candidate in enumerate(candidates, start=1):
+            poems, errors = ingest_gutenberg_candidates(
+                [candidate],
+                texts_dir=texts_dir,
+                max_non_empty_lines=max_non_empty_lines,
+            )
+            normalized_payloads.extend(poems)
+            extract_errors.extend(errors)
+            if index < total_candidates:
+                progress.render_gutenberg(processed=index, total=total_candidates)
+        progress.render_gutenberg(processed=total_candidates, total=total_candidates, force=True)
     canonical, duplicates = dedupe_poems(normalized_payloads)
     unique_authors = sorted({record["author"] for record in canonical if isinstance(record.get("author"), str)})
     author_records, author_errors = enrich_authors(
@@ -313,6 +416,7 @@ def run_gutenberg_ingestion(
             "catalog_csv": str(catalog_csv),
             "texts_dir": str(texts_dir),
             "language": language,
+            "max_non_empty_lines": max_non_empty_lines,
             "catalog_candidates": len(candidates),
             "normalized_poems": len(normalized_payloads),
         },

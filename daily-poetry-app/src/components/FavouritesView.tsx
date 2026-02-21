@@ -31,7 +31,7 @@ export function FavouritesView({
   return (
     <>
       <div className="top-logo-wrap">
-        <img className="top-logo" src={topLogoSrc} alt="DailyPoetry" />
+        <img className="top-logo" src={topLogoSrc} alt="daily-poetry" />
       </div>
       <section className="panel">
         <section className="notification-panel" aria-label="Daily reminders">

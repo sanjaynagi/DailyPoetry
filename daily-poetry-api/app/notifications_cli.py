@@ -1,4 +1,4 @@
-"""CLI for DailyPoetry web push notifications."""
+"""CLI for daily-poetry web push notifications."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from app.notifications import send_due_notifications
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Send DailyPoetry web push notifications")
+    parser = argparse.ArgumentParser(description="Send daily-poetry web push notifications")
     parser.add_argument("--date", type=str, default=None, help="Target UTC date in YYYY-MM-DD (optional)")
     parser.add_argument("--dry-run", action="store_true", help="Compute recipients without sending notifications")
     return parser

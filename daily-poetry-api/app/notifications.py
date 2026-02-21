@@ -39,7 +39,7 @@ def _due_now(preference: models.NotificationPreference, now_utc: datetime) -> bo
 def _payload(today: date) -> str:
     return json.dumps(
         {
-            "title": "DailyPoetry",
+            "title": "daily-poetry",
             "body": f"Your poem for {today.isoformat()} is ready.",
             "url": "/",
         }

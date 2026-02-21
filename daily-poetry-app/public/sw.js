@@ -35,7 +35,7 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   const payload = parsePushPayload(event.data);
-  const title = payload.title || "DailyPoetry";
+  const title = payload.title || "daily-poetry";
   const options = {
     body: payload.body || "Your daily poem is ready.",
     icon: "/icon-192.png",

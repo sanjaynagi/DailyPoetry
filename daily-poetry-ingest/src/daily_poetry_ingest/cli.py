@@ -46,6 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gutenberg-catalog-csv", type=Path, default=None)
     parser.add_argument("--gutenberg-texts-dir", type=Path, default=None)
     parser.add_argument("--gutenberg-language", type=str, default="en")
+    parser.add_argument(
+        "--gutenberg-max-non-empty-lines",
+        type=int,
+        default=40,
+        help="Maximum non-empty poem lines allowed for strict Gutenberg extraction.",
+    )
     return parser
 
 
@@ -83,6 +89,7 @@ def main() -> None:
             catalog_csv=args.gutenberg_catalog_csv,
             texts_dir=args.gutenberg_texts_dir,
             language=args.gutenberg_language,
+            max_non_empty_lines=args.gutenberg_max_non_empty_lines,
             timeout_seconds=args.timeout_seconds,
             retries=args.retries,
             backoff_seconds=args.backoff_seconds,

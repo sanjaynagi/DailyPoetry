@@ -86,7 +86,7 @@ function App() {
         {loadingDaily ? (
           <section className="loading-splash" aria-label="Loading">
             <div className="loading-shell">
-              <img className="loading-logo" src="/logo-transparent.png" alt="DailyPoetry" />
+              <img className="loading-logo" src="/logo-transparent.png" alt="daily-poetry" />
               <p className="loading-title">Loading today's poem</p>
               <p className="loading-subtitle">Waking up the API server. This can take a few seconds.</p>
               <div className="loading-progress" aria-hidden="true">
@@ -131,7 +131,7 @@ function App() {
           onClick={() => setViewMode("daily_poem")}
           aria-label="DailyPoem"
         >
-          <img className="tab-logo" src={dailyPoemLogoSrc} alt="DailyPoetry" />
+          <img className="tab-logo" src={dailyPoemLogoSrc} alt="daily-poetry" />
         </button>
         <button
           className={viewMode === "favourites" ? "tab-btn tab-btn-active" : "tab-btn"}
