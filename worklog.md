@@ -1,5 +1,11 @@
 # Worklog
 
+## 2026-02-21 00:05:02Z
+- Updated favourites poem item styling in `daily-poetry-app/src/styles.css`:
+  - removed outline/border from `.favourite-row`,
+  - adjusted row background shading to remain visually distinct from surrounding background without using an outline.
+- Verified frontend build passes: `cd daily-poetry-app && npm run build`.
+
 ## 2026-02-21 00:00:33Z
 - Executed next-step runtime operations for author bio rollout.
 - Regenerated ingestion artifacts with bios:
