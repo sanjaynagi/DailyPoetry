@@ -491,10 +491,10 @@ body::after {
 }
 
 .favourite-row {
-  border: 1px solid var(--favourite-row-border);
+  border: 0;
   border-radius: 0.92rem;
   padding: 0.78rem;
-  background: var(--favourite-row-bg);
+  background: color-mix(in srgb, var(--favourite-row-bg) 82%, var(--poem-card-bg) 18%);
 }
 
 .favourite-summary {
