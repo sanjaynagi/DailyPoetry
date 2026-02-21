@@ -45,6 +45,7 @@ The command writes:
 - `poems.jsonl`: canonical normalized poems
 - `duplicates.jsonl`: records that share `content_hash` with a canonical poem
 - `authors.jsonl`: author metadata with nullable `image_url`
+  - includes nullable `bio_short`, `bio_source`, and `bio_url`
 - `report.json`: ingestion metrics and error records
 
 ## Notes
@@ -52,5 +53,13 @@ The command writes:
 - Ingestion is safe to rerun and deterministic for canonical output.
 - Line and stanza formatting is preserved from PoetryDB `lines` data.
 - Multiprocessing with queues is used for fetch and normalization stages.
-- Author images are enriched from Wikipedia when available; when unavailable, `image_url` is `null`.
+- Author images and short bios are enriched from Wikipedia when available.
+- When enrichment data is unavailable, nullable fields remain `null`.
+
+Bio enrichment controls:
+
+```bash
+daily-poetry-ingest --author-bio-max-chars 280
+daily-poetry-ingest --no-enrich-author-bios
+```
 - Gutenberg ingestion uses strict heuristics to prioritize full/accurate poem extraction over recall.

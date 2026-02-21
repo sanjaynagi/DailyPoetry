@@ -47,7 +47,7 @@ python -m app.seed_from_artifacts --artifacts-dir ../artifacts/ingestion --sched
 ```
 
 This loads `authors.jsonl` and `poems.jsonl` into DB and schedules daily poems.
-Author `image_url` values from `authors.jsonl` are stored and served via `/v1/daily`.
+Author `image_url` and `bio_short` values from `authors.jsonl` are stored and served via `/v1/daily`.
 Schedule generation now uses only poems with `editorial_status='approved'`.
 
 For initial bootstrap where newly inserted poems should be immediately schedulable:
